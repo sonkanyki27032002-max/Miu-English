@@ -212,9 +212,11 @@
     }
 
     // Stop all speech immediately
-    stop() {
+    stop(clearQueue = true) {
       if (!this.isSupported) return;
-      this.clearDialogueQueue();
+      if (clearQueue) {
+        this.clearDialogueQueue();
+      }
       try {
         window.speechSynthesis.cancel();
       } catch (e) {}
@@ -246,8 +248,12 @@
         return;
       }
 
-      // Stop previous utterance
-      this.stop();
+      // Stop previous utterance without clearing dialogue queue if keepQueue is true
+      if (options.keepQueue) {
+        try { window.speechSynthesis.cancel(); } catch (e) {}
+      } else {
+        this.stop(true);
+      }
 
       const lang = options.lang || 'en-US';
       const rate = options.rate || this.currentRate || 0.85;
@@ -272,12 +278,21 @@
       this.isPlaying = true;
       this.notifyListeners({ type: 'status_changed', status: 'playing', text: clean, lang });
 
+      // Chrome/Edge watchdog to resume if stalled
+      if (this.watchdogTimer) clearInterval(this.watchdogTimer);
+      this.watchdogTimer = setInterval(() => {
+        if (window.speechSynthesis.speaking && window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+      }, 3000);
+
       utterance.onstart = () => {
         if (options.onStart) options.onStart();
         this.notifyListeners({ type: 'status_changed', status: 'playing', text: clean, lang });
       };
 
       utterance.onend = () => {
+        if (this.watchdogTimer) { clearInterval(this.watchdogTimer); this.watchdogTimer = null; }
         this.isPlaying = false;
         this.activeUtterance = null;
         this.notifyListeners({ type: 'status_changed', status: 'idle' });
@@ -285,6 +300,7 @@
       };
 
       utterance.onerror = (err) => {
+        if (this.watchdogTimer) { clearInterval(this.watchdogTimer); this.watchdogTimer = null; }
         this.isPlaying = false;
         this.activeUtterance = null;
         this.notifyListeners({ type: 'status_changed', status: 'error', error: err });
@@ -295,6 +311,7 @@
         window.speechSynthesis.speak(utterance);
       } catch (err) {
         console.error('SpeechSynthesis.speak failed:', err);
+        if (this.watchdogTimer) { clearInterval(this.watchdogTimer); this.watchdogTimer = null; }
         this.isPlaying = false;
         this.activeUtterance = null;
         this.notifyListeners({ type: 'status_changed', status: 'error', error: err });
@@ -304,7 +321,7 @@
     // Play entire dialogue sequentially with pause and highlighting
     playDialogue(dialogueItems, options = {}) {
       if (!Array.isArray(dialogueItems) || dialogueItems.length === 0) return;
-      this.stop();
+      this.stop(true);
 
       this.dialogueQueue = dialogueItems;
       this.currentDialogueIndex = 0;
@@ -319,7 +336,8 @@
 
         const item = this.dialogueQueue[this.currentDialogueIndex];
         const turnText = item.text || item.en || item;
-        const speaker = item.speaker || '';
+        const speaker = (item.speaker || '').toLowerCase();
+        const isSpeakerB = speaker.includes('b') || speaker.includes('2') || speaker.includes('female');
 
         if (options.onTurnChange) {
           options.onTurnChange(this.currentDialogueIndex, item);
@@ -328,13 +346,16 @@
         this.speak(turnText, {
           lang: 'en-US',
           rate: rate,
+          pitch: isSpeakerB ? 1.08 : 1.0,
+          keepQueue: true,
           onEnd: () => {
             this.currentDialogueIndex++;
             this.dialogueTimer = setTimeout(playNext, 600); // 600ms natural conversational pause
           },
-          onError: () => {
-            this.clearDialogueQueue();
-            if (options.onComplete) options.onComplete();
+          onError: (err) => {
+            console.warn('Dialogue utterance error, continuing to next line:', err);
+            this.currentDialogueIndex++;
+            this.dialogueTimer = setTimeout(playNext, 400);
           }
         });
       };

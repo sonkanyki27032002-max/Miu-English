@@ -931,6 +931,216 @@ textarea.field { min-height: 100px; resize: vertical; }
 }
 
 /* ==========================================
+   MY CARDS STYLES
+   ========================================== */
+.mycards-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.mycards-decks-nav {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px 2px 14px;
+  border-bottom: 2px solid var(--line);
+  margin-bottom: 20px;
+  scrollbar-width: thin;
+}
+.mycards-deck-btn {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy);
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all .15s ease;
+}
+.mycards-deck-btn:hover { border-color: var(--blue); }
+.mycards-deck-btn.active {
+  background: var(--navy);
+  color: #fff;
+  border-color: var(--navy);
+  box-shadow: 0 4px 12px rgba(15,30,54,0.15);
+}
+.mycards-deck-btn .deck-count-pill {
+  font-size: 11px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-weight: 750;
+}
+.mycards-deck-btn.active .deck-count-pill {
+  background: rgba(255,255,255,0.25);
+  color: #fff;
+}
+.mycards-view-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.mycards-view-tab {
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.mycards-view-tab.active {
+  background: #0284c7;
+  color: #fff;
+  border-color: #0284c7;
+}
+
+/* Practice Box */
+.mycard-practice-container {
+  max-width: 680px;
+  margin: 0 auto;
+}
+.mycard-practice-card {
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: 20px;
+  padding: 32px 24px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  position: relative;
+  transition: all .2s ease;
+}
+.mycard-mode-chips {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.mycard-mode-chip {
+  padding: 6px 14px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.mycard-mode-chip.active {
+  background: var(--navy);
+  color: #fff;
+  border-color: var(--navy);
+}
+
+/* Cloze Input */
+.mycard-cloze-box {
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  margin: 16px 0;
+  text-align: left;
+}
+.mycard-cloze-hint {
+  font-family: ui-monospace, monospace;
+  font-size: 16px;
+  color: #0369a1;
+  font-weight: 750;
+  letter-spacing: .08em;
+  margin-bottom: 10px;
+  background: #e0f2fe;
+  padding: 8px 12px;
+  border-radius: 8px;
+  display: block;
+}
+.mycard-cloze-input {
+  width: 100%;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px 14px;
+  border: 2px solid #cbd5e1;
+  border-radius: 10px;
+  outline: none;
+  transition: border-color .15s;
+}
+.mycard-cloze-input:focus { border-color: var(--blue); }
+.mycard-cloze-input.correct { border-color: #10b981; background: #ecfdf5; color: #065f46; }
+.mycard-cloze-input.wrong { border-color: #ef4444; background: #fef2f2; }
+
+/* 4 Memory Rating Buttons */
+.mycard-memory-ratings {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 20px;
+}
+.mem-btn {
+  padding: 12px 8px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.mem-btn.again {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+.mem-btn.again:hover { background: #fee2e2; }
+.mem-btn.day1 {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+.mem-btn.day1:hover { background: #dbeafe; }
+.mem-btn.day3 {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #065f46;
+}
+.mem-btn.day3:hover { background: #d1fae5; }
+.mem-btn.day6 {
+  background: #faf5ff;
+  border-color: #e9d5ff;
+  color: #6b21a8;
+}
+.mem-btn.day6:hover { background: #f3e8ff; }
+.mem-btn strong { font-size: 12px; font-weight: 800; }
+.mem-btn small { font-size: 11px; opacity: .85; }
+
+/* Level Badges */
+.card-level-badge {
+  font-size: 11px;
+  font-weight: 750;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-block;
+}
+.card-level-badge.new { background: #f1f5f9; color: #475569; }
+.card-level-badge.again { background: #fee2e2; color: #dc2626; }
+.card-level-badge.day1 { background: #dbeafe; color: #2563eb; }
+.card-level-badge.day3 { background: #d1fae5; color: #059669; }
+.card-level-badge.day6 { background: #f3e8ff; color: #7c3aed; }
+
+/* ==========================================
    VIEW 5: SMART SRS & QUICK TEST
    ========================================== */
 .srs-overview-cards {
@@ -1397,6 +1607,7 @@ textarea.field { min-height: 100px; resize: vertical; }
       <button class="navbtn active" data-view="home"><span class="ico">📊</span> Tổng quan</button>
       <button class="navbtn" data-view="curriculum"><span class="ico">📅</span> Lộ trình 365 Ngày</button>
       <button class="navbtn" data-view="vocabulary"><span class="ico">🗂️</span> Kho từ vựng (1,648)</button>
+      <button class="navbtn" data-view="mycards"><span class="ico">🃏</span> My Cards (Thẻ của tôi)</button>
       <button class="navbtn" data-view="srs"><span class="ico">🔄</span> Ôn tập thông minh</button>
       <button class="navbtn" data-view="reflex"><span class="ico">⚡</span> Đấu trường Phản xạ</button>
       <button class="navbtn" data-view="reading"><span class="ico">📖</span> Đọc hiểu tiếng Anh (15)</button>
@@ -1604,6 +1815,81 @@ textarea.field { min-height: 100px; resize: vertical; }
 
           <!-- Vocab Render Target -->
           <div id="vocabBankContent"></div>
+        </div>
+      </section>
+
+      <!-- VIEW: MY CARDS (BỘ THẺ TỰ HỌC CÁ NHÂN) -->
+      <section id="mycardsView" class="view-container hidden">
+        <div class="panel">
+          <!-- Main Header -->
+          <div class="mycards-header">
+            <div>
+              <h2 style="font-size:22px;font-weight:800;color:var(--navy);margin-bottom:4px;">🃏 My Cards — Bộ Thẻ Tự Học & Ôn Tập Thông Minh</h2>
+              <p style="font-size:13px;color:var(--muted);margin:0;">Tự do tạo các chủ đề học tập (Tiếng Anh hằng ngày, công việc...), thêm từ vựng và luyện tập theo 4 chế độ ghi nhớ chuyên sâu.</p>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn light btn-sm" id="openAddDeckModalBtn">➕ Tạo chủ đề mới</button>
+              <button class="btn primary btn-sm" id="openAddMyCardModalBtn">➕ Thêm thẻ vào chủ đề</button>
+            </div>
+          </div>
+
+          <!-- Decks Navigation Bar -->
+          <div class="mycards-decks-nav" id="myDecksNavContainer"></div>
+
+          <!-- View Mode Tabs (Quản lý từ vựng vs Ôn tập 4 chế độ) -->
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+            <div class="mycards-view-tabs">
+              <button class="mycards-view-tab active" id="tabMyCardsPracticeBtn">🎯 Ôn tập & Luyện thi</button>
+              <button class="mycards-view-tab" id="tabMyCardsListBtn">📋 Quản lý từ vựng trong chủ đề</button>
+            </div>
+            <div id="myDeckInfoRight" style="font-size:12px;color:var(--muted);font-weight:600;"></div>
+          </div>
+
+          <!-- SUB-VIEW 1: PRACTICE HUB (4 MODES) -->
+          <div id="mycardsPracticeHub">
+            <!-- 4 Modes Selector -->
+            <div class="mycard-mode-chips">
+              <button class="mycard-mode-chip active" data-mode="cloze">✍️ 1. Điền hết lại cụm đó</button>
+              <button class="mycard-mode-chip" data-mode="vi_en">🇻🇳 2. Nhìn tiếng Việt đoán tiếng Anh</button>
+              <button class="mycard-mode-chip" data-mode="en_vi">🇺🇸 3. Nhìn tiếng Anh đoán tiếng Việt</button>
+              <button class="mycard-mode-chip" data-mode="mixed">🎲 4. Trộn ngẫu nhiên cả 3 dạng</button>
+            </div>
+
+            <!-- Controls (Shuffle & Auto-speak) -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+              <div style="display:flex;gap:8px;align-items:center;">
+                <button class="btn btn-xs outline" id="toggleMyCardShuffleBtn" title="Bật/tắt trộn ngẫu nhiên thứ tự thẻ">
+                  🔀 Đang bật trộn thứ tự
+                </button>
+                <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;cursor:pointer;">
+                  <input type="checkbox" id="myCardAutoSpeakToggle" checked>
+                  🔊 Tự phát âm
+                </label>
+              </div>
+
+              <div style="display:flex;gap:8px;font-size:12px;font-weight:700;">
+                <span class="card-level-badge again" id="myPracticeAgainBadge">🔁 Học lại: 0</span>
+                <span class="card-level-badge day1" id="myPracticeDoneBadge">🟢 Đã nhớ: 0</span>
+                <span style="color:var(--navy);padding:3px 8px;" id="myPracticeCounterBadge">Thẻ 1 / 1</span>
+              </div>
+            </div>
+
+            <!-- Interactive Practice Target Container -->
+            <div id="mycardsPracticeCardContainer"></div>
+          </div>
+
+          <!-- SUB-VIEW 2: CARD MANAGER LIST -->
+          <div id="mycardsListHub" class="hidden">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+              <input type="text" id="myCardsSearchInput" class="field" style="max-width:320px;font-size:13px;" placeholder="🔍 Tìm kiếm từ / câu trong chủ đề này...">
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-xs outline" id="editCurrentDeckBtn">✏️ Đổi tên chủ đề</button>
+                <button class="btn btn-xs outline" id="deleteCurrentDeckBtn" style="color:#dc2626;border-color:#fca5a5;">🗑️ Xóa chủ đề này</button>
+              </div>
+            </div>
+            <div id="mycardsListContainer"></div>
+          </div>
+
         </div>
       </section>
 
@@ -2116,6 +2402,101 @@ textarea.field { min-height: 100px; resize: vertical; }
           <div style="display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--line);padding-top:14px;">
             <button type="button" class="btn outline" id="cancelCustomWordBtn">Hủy</button>
             <button type="button" class="btn primary" id="saveCustomWordBtn">💾 Lưu từ vựng</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit My Deck (Chủ đề học) -->
+  <div id="addDeckModal" class="modal-overlay hidden">
+    <div class="modal-window" style="max-width:480px;">
+      <div style="padding:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h3 id="deckModalTitle" style="font-size:18px;font-weight:800;color:var(--navy);margin:0;">➕ Tạo Chủ Đề Học Tập Mới</h3>
+          <button class="btn btn-xs outline" id="closeAddDeckModalBtn">✕ Đóng</button>
+        </div>
+        <form id="deckForm" onsubmit="return false;">
+          <input type="hidden" id="deckEditId" value="">
+          <div style="margin-bottom:14px;">
+            <label style="display:block;font-size:12px;font-weight:750;color:var(--navy);margin-bottom:4px;">
+              Tên chủ đề <span style="color:#ef4444;">*</span>:
+            </label>
+            <input type="text" id="deckNameInput" class="field" placeholder="Ví dụ: Tiếng Anh hằng ngày, Giao tiếp công sở, Phrasal Verbs..." required>
+          </div>
+          <div style="margin-bottom:18px;">
+            <label style="display:block;font-size:12px;font-weight:750;color:var(--navy);margin-bottom:4px;">
+              Mô tả ngắn:
+            </label>
+            <textarea id="deckDescInput" class="field" style="min-height:70px;" placeholder="Mô tả mục tiêu của chủ đề này (tùy chọn)..."></textarea>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--line);padding-top:14px;">
+            <button type="button" class="btn outline" id="cancelDeckBtn">Hủy</button>
+            <button type="button" class="btn primary" id="saveDeckBtn">💾 Lưu chủ đề</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit My Card (Thẻ học cá nhân) -->
+  <div id="addMyCardModal" class="modal-overlay hidden">
+    <div class="modal-window" style="max-width:580px;">
+      <div style="padding:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h3 id="myCardModalTitle" style="font-size:18px;font-weight:800;color:var(--navy);margin:0;">➕ Thêm Thẻ Vào Chủ Đề</h3>
+          <button class="btn btn-xs outline" id="closeAddMyCardModalBtn">✕ Đóng</button>
+        </div>
+        <form id="myCardForm" onsubmit="return false;">
+          <input type="hidden" id="myCardEditId" value="">
+          <div style="margin-bottom:14px;">
+            <label style="display:block;font-size:12px;font-weight:750;color:var(--navy);margin-bottom:4px;">
+              Thuộc chủ đề <span style="color:#ef4444;">*</span>:
+            </label>
+            <select id="myCardDeckSelect" class="field"></select>
+          </div>
+          <div style="margin-bottom:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <label style="font-size:12px;font-weight:750;color:var(--navy);margin:0;">
+                Từ hoặc Cụm từ tiếng Anh <span style="color:#ef4444;">*</span>:
+              </label>
+              <button type="button" class="btn btn-xs light" id="speakMyCardPreviewBtn" style="padding:2px 8px;font-size:11px;">🔊 Nghe thử</button>
+            </div>
+            <input type="text" id="myCardEnInput" class="field" placeholder="Ví dụ: Good morning! How are you doing today?" required>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="display:block;font-size:12px;font-weight:750;color:var(--navy);margin-bottom:4px;">
+              Nghĩa tiếng Việt <span style="color:#ef4444;">*</span>:
+            </label>
+            <input type="text" id="myCardViInput" class="field" placeholder="Ví dụ: Chào buổi sáng! Hôm nay bạn thế nào?" required>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="display:block;font-size:12px;font-weight:750;color:var(--navy);margin-bottom:4px;">
+              Phiên âm IPA (tùy chọn):
+            </label>
+            <input type="text" id="myCardIpaInput" class="field" placeholder="Ví dụ: /ɡʊd ˈmɔːnɪŋ/">
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="display:block;font-size:12px;font-weight:750;color:var(--navy);margin-bottom:4px;">
+              Câu ví dụ tiếng Anh (tùy chọn):
+            </label>
+            <textarea id="myCardExampleInput" class="field" style="min-height:60px;" placeholder="Ví dụ: Good morning! How are you doing today? - I am doing great."></textarea>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="display:block;font-size:12px;font-weight:750;color:var(--navy);margin-bottom:4px;">
+              Dịch câu ví dụ tiếng Việt (tùy chọn):
+            </label>
+            <input type="text" id="myCardExampleViInput" class="field" placeholder="Dịch nghĩa câu ví dụ trên...">
+          </div>
+          <div style="margin-bottom:18px;">
+            <label style="display:block;font-size:12px;font-weight:750;color:var(--navy);margin-bottom:4px;">
+              Ghi chú thêm (Mẹo nhớ, cách dùng):
+            </label>
+            <input type="text" id="myCardNotesInput" class="field" placeholder="Ví dụ: Dùng chào hỏi lịch sự hằng ngày...">
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--line);padding-top:14px;">
+            <button type="button" class="btn outline" id="cancelMyCardBtn">Hủy</button>
+            <button type="button" class="btn primary" id="saveMyCardBtn">💾 Lưu thẻ học</button>
           </div>
         </form>
       </div>

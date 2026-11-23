@@ -33,6 +33,19 @@
     flashcardFlipped: false,
     flashcardDirection: 'en-vi', // 'en-vi' or 'vi-en'
     
+    // My Cards State
+    mycardsSelectedDeckId: 'deck-daily',
+    mycardsViewTab: 'practice', // 'practice' or 'list'
+    mycardsPracticeMode: 'cloze', // 'cloze', 'vi_en', 'en_vi', 'mixed'
+    mycardsQueue: [],
+    mycardsQueueDeckId: null,
+    mycardsCurrentIdx: 0,
+    mycardsCardRevealed: false,
+    mycardsShuffle: true,
+    mycardsAutoSpeak: true,
+    mycardsSearchQuery: '',
+    mycardsMixedModeMap: {},
+
     // Anki SRS Study State
     ankiDeck: 'due', // 'due', 'custom', 'difficult', 'learning', 'all'
     ankiQueue: [],
@@ -124,7 +137,7 @@
 
   // Navigation Router
   function navigateTo(viewName) {
-    const validViews = ['home', 'curriculum', 'dayLesson', 'vocabulary', 'srs', 'reflex', 'reading', 'backup'];
+    const validViews = ['home', 'curriculum', 'dayLesson', 'vocabulary', 'mycards', 'srs', 'reflex', 'reading', 'backup'];
     if (!validViews.includes(viewName)) viewName = 'home';
     
     stopAudio();
@@ -148,6 +161,7 @@
     if (viewName === 'home') renderDashboard();
     if (viewName === 'curriculum') renderCurriculumList();
     if (viewName === 'vocabulary') renderVocabBank();
+    if (viewName === 'mycards') renderMyCardsView();
     if (viewName === 'srs') renderSRSView();
     if (viewName === 'reflex') renderReflexArena();
     if (viewName === 'reading') renderReadingView();
@@ -1699,6 +1713,960 @@
     });
 
     containerSpeakButtons(container);
+  }
+
+  // ==========================================
+  // MY CARDS (BỘ THẺ TỰ HỌC CÁ NHÂN) CONTROLLER
+  // ==========================================
+
+  // Generate First-Letter Cloze Hint (e.g. "Good morning!" -> "G___ m______!")
+  function generateClozeHint(text) {
+    if (!text) return '';
+    return text.replace(/\b([a-zA-Z0-9])([a-zA-Z0-9]*)\b/g, (match, firstLetter, rest) => {
+      return firstLetter + '_'.repeat(rest.length);
+    });
+  }
+
+  // Generate word-by-word diff comparison for typing errors
+  function generateDiffHtml(userInput, correctText) {
+    const userWords = (userInput || '').trim().split(/\s+/);
+    const correctWords = (correctText || '').trim().split(/\s+/);
+
+    const diffSpans = correctWords.map((cw, idx) => {
+      const uw = userWords[idx] || '';
+      const cleanCw = cw.toLowerCase().replace(/[^\w]/g, '');
+      const cleanUw = uw.toLowerCase().replace(/[^\w]/g, '');
+      if (cleanCw === cleanUw) {
+        return `<span style="color:#059669;font-weight:700;">${escapeHtml(cw)}</span>`;
+      } else {
+        return `<span style="color:#dc2626;text-decoration:underline;font-weight:700;background:#fee2e2;padding:2px 4px;border-radius:4px;" title="Đáp án đúng: ${escapeHtml(cw)}">${escapeHtml(cw)}</span>`;
+      }
+    });
+
+    return diffSpans.join(' ');
+  }
+
+  // Clean text for comparing
+  function normalizeTextForComparison(text) {
+    return (text || '')
+      .toLowerCase()
+      .trim()
+      .replace(/[.,/#!$%^&*;:{}=\-_`~()?'"“”]/g, '')
+      .replace(/\s+/g, ' ');
+  }
+
+  // Get Level Badge HTML
+  function getMyCardLevelBadgeHtml(level) {
+    switch (level) {
+      case 'again':
+        return '<span class="card-level-badge again">🔁 Học lại</span>';
+      case 'day1':
+        return '<span class="card-level-badge day1">🔵 Nhớ 1 ngày</span>';
+      case 'day3':
+        return '<span class="card-level-badge day3">🟢 Đã nhớ 3 ngày</span>';
+      case 'day6':
+        return '<span class="card-level-badge day6">🟣 Rất nhớ 6 ngày</span>';
+      default:
+        return '<span class="card-level-badge new">🌱 Mới</span>';
+    }
+  }
+
+  // Render 4 Memory Rating Buttons
+  function render4RatingButtonsHtml() {
+    return `
+      <div style="margin-top:20px;">
+        <div style="font-size:12px;font-weight:750;color:var(--muted);margin-bottom:10px;text-align:center;">
+          ĐÁNH GIÁ MỨC ĐỘ GHI NHỚ (Hệ thống sẽ tự động lên lịch nhắc lại):
+        </div>
+        <div class="mycard-memory-ratings">
+          <button class="mem-btn again" data-rating="1" title="Phím tắt: 1">
+            <strong>🔁 Học lại</strong>
+            <small>Lặp lại trong phiên</small>
+          </button>
+          <button class="mem-btn day1" data-rating="2" title="Phím tắt: 2">
+            <strong>🔵 Nhớ 1 ngày</strong>
+            <small>Ôn lại sau 1 ngày</small>
+          </button>
+          <button class="mem-btn day3" data-rating="3" title="Phím tắt: 3">
+            <strong>🟢 Đã nhớ 3 ngày</strong>
+            <small>Ôn lại sau 3 ngày</small>
+          </button>
+          <button class="mem-btn day6" data-rating="4" title="Phím tắt: 4">
+            <strong>🟣 Rất nhớ 6 ngày</strong>
+            <small>Ôn lại sau 6 ngày</small>
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  // Main My Cards View Controller
+  function renderMyCardsView() {
+    const decks = App.srs.getMyDecks();
+    if (!Array.isArray(decks) || decks.length === 0) {
+      App.srs.addDeck('Tiếng Anh hằng ngày', 'Các mẫu câu và cụm từ giao tiếp hằng ngày thông dụng');
+    }
+
+    const currentDecks = App.srs.getMyDecks();
+    const hasCurrentDeck = currentDecks.some(d => d.id === App.mycardsSelectedDeckId);
+    if (!hasCurrentDeck && currentDecks.length > 0) {
+      App.mycardsSelectedDeckId = currentDecks[0].id;
+    }
+
+    // Render deck navigation
+    renderMyDecksNav();
+
+    // Toggle sub-views (Practice vs List)
+    const practiceHub = $('mycardsPracticeHub');
+    const listHub = $('mycardsListHub');
+    const practiceTabBtn = $('tabMyCardsPracticeBtn');
+    const listTabBtn = $('tabMyCardsListBtn');
+
+    if (practiceTabBtn) practiceTabBtn.classList.toggle('active', App.mycardsViewTab === 'practice');
+    if (listTabBtn) listTabBtn.classList.toggle('active', App.mycardsViewTab === 'list');
+
+    if (App.mycardsViewTab === 'practice') {
+      if (practiceHub) practiceHub.classList.remove('hidden');
+      if (listHub) listHub.classList.add('hidden');
+
+      if (!App.mycardsQueue || App.mycardsQueue.length === 0 || App.mycardsQueueDeckId !== App.mycardsSelectedDeckId) {
+        initMyCardsPracticeQueue(true);
+      }
+      renderMyCardsPractice();
+    } else {
+      if (practiceHub) practiceHub.classList.add('hidden');
+      if (listHub) listHub.classList.remove('hidden');
+      renderMyCardsList();
+    }
+  }
+
+  // Render Horizontal Decks Nav
+  function renderMyDecksNav() {
+    const nav = $('myDecksNavContainer');
+    if (!nav) return;
+    const decks = App.srs.getMyDecks();
+    nav.innerHTML = '';
+
+    decks.forEach(deck => {
+      const stats = App.srs.getMyCardsStats(deck.id);
+      const btn = document.createElement('button');
+      btn.className = `mycards-deck-btn ${deck.id === App.mycardsSelectedDeckId ? 'active' : ''}`;
+      btn.innerHTML = `
+        <span>📁 ${escapeHtml(deck.name)}</span>
+        <span class="deck-count-pill">${stats.total} thẻ</span>
+      `;
+      btn.onclick = () => {
+        if (App.mycardsSelectedDeckId !== deck.id) {
+          App.mycardsSelectedDeckId = deck.id;
+          initMyCardsPracticeQueue(true);
+          renderMyCardsView();
+        }
+      };
+      nav.appendChild(btn);
+    });
+
+    // Update Right Deck Info
+    const activeDeck = decks.find(d => d.id === App.mycardsSelectedDeckId);
+    const infoEl = $('myDeckInfoRight');
+    if (infoEl && activeDeck) {
+      const stats = App.srs.getMyCardsStats(activeDeck.id);
+      infoEl.innerHTML = `Chủ đề: <strong style="color:var(--navy);">${escapeHtml(activeDeck.name)}</strong> (${stats.total} thẻ • ${stats.due} cần ôn)`;
+    }
+  }
+
+  // Initialize Practice Queue for active deck
+  function initMyCardsPracticeQueue(resetIndex = false) {
+    const cards = App.srs.getMyCards(App.mycardsSelectedDeckId);
+    let queue = [...cards];
+
+    if (App.mycardsShuffle) {
+      for (let i = queue.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [queue[i], queue[j]] = [queue[j], queue[i]];
+      }
+    }
+
+    App.mycardsQueue = queue;
+    App.mycardsQueueDeckId = App.mycardsSelectedDeckId;
+    if (resetIndex) {
+      App.mycardsCurrentIdx = 0;
+    }
+    App.mycardsCardRevealed = false;
+    App.mycardsMixedModeMap = {};
+  }
+
+  // Render Practice Hub (4 Modes)
+  function renderMyCardsPractice() {
+    const container = $('mycardsPracticeCardContainer');
+    if (!container) return;
+
+    const stats = App.srs.getMyCardsStats(App.mycardsSelectedDeckId);
+    if ($('myPracticeAgainBadge')) $('myPracticeAgainBadge').textContent = `🔁 Cần ôn: ${stats.due}`;
+    if ($('myPracticeDoneBadge')) $('myPracticeDoneBadge').textContent = `🟢 Đã nhớ: ${stats.day1 + stats.day3 + stats.day6}`;
+
+    // Mode chips active states
+    $$('.mycard-mode-chip').forEach(chip => {
+      chip.classList.toggle('active', chip.dataset.mode === App.mycardsPracticeMode);
+    });
+
+    // Shuffle button label
+    const shuffleBtn = $('toggleMyCardShuffleBtn');
+    if (shuffleBtn) {
+      shuffleBtn.innerHTML = App.mycardsShuffle ? '🔀 Đang bật trộn thứ tự' : '➡️ Thứ tự tuần tự';
+      shuffleBtn.classList.toggle('primary', App.mycardsShuffle);
+    }
+
+    // Auto-speak toggle state
+    const autoSpeakCheck = $('myCardAutoSpeakToggle');
+    if (autoSpeakCheck) {
+      autoSpeakCheck.checked = App.mycardsAutoSpeak;
+    }
+
+    // Case 1: Empty Deck
+    if (!App.mycardsQueue || App.mycardsQueue.length === 0) {
+      if ($('myPracticeCounterBadge')) $('myPracticeCounterBadge').textContent = 'Thẻ 0 / 0';
+      container.innerHTML = `
+        <div class="mycard-practice-card" style="padding:48px 24px;">
+          <div style="font-size:48px;margin-bottom:12px;">📚</div>
+          <h3 style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:8px;">Chủ đề này chưa có thẻ từ vựng nào!</h3>
+          <p style="font-size:13px;color:var(--muted);max-width:440px;margin:0 auto 20px;">
+            Hãy thêm các từ vựng hoặc câu bạn muốn luyện tập mỗi ngày để hệ thống lên lịch ôn tập thông minh cho bạn.
+          </p>
+          <button class="btn primary" id="emptyAddCardBtn">➕ Thêm thẻ đầu tiên vào chủ đề này</button>
+        </div>
+      `;
+      const btn = $('emptyAddCardBtn');
+      if (btn) btn.onclick = () => openAddMyCardModal();
+      return;
+    }
+
+    // Case 2: Session Finished
+    if (App.mycardsCurrentIdx >= App.mycardsQueue.length) {
+      if ($('myPracticeCounterBadge')) $('myPracticeCounterBadge').textContent = `Hoàn thành (${App.mycardsQueue.length}/${App.mycardsQueue.length})`;
+      container.innerHTML = `
+        <div class="mycard-practice-card" style="padding:40px 24px;">
+          <div style="font-size:52px;margin-bottom:12px;">🎉</div>
+          <h3 style="font-size:22px;font-weight:800;color:var(--navy);margin-bottom:8px;">Xuất sắc! Đã hoàn thành lượt ôn tập!</h3>
+          <p style="font-size:14px;color:var(--muted);max-width:480px;margin:0 auto 24px;">
+            Bạn đã luyện tập qua toàn bộ các thẻ trong chủ đề này. Hãy duy trì chuỗi học mỗi ngày để kiến thức thấm sâu vào phản xạ nhé!
+          </p>
+
+          <div style="display:flex;justify-content:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
+            <div style="background:#f1f5f9;padding:12px 20px;border-radius:12px;text-align:center;">
+              <div style="font-size:20px;font-weight:800;color:var(--navy);">${App.mycardsQueue.length}</div>
+              <div style="font-size:12px;color:var(--muted);">Tổng thẻ đã ôn</div>
+            </div>
+            <div style="background:#ecfdf5;padding:12px 20px;border-radius:12px;text-align:center;">
+              <div style="font-size:20px;font-weight:800;color:#065f46;">${stats.day1 + stats.day3 + stats.day6}</div>
+              <div style="font-size:12px;color:#047857;">Thẻ đã ghi nhớ</div>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+            <button class="btn primary" id="restartPracticeBtn">🔁 Ôn tập lại từ đầu</button>
+            <button class="btn outline" id="viewListAfterPracticeBtn">📋 Quản lý danh sách thẻ</button>
+            <button class="btn light" id="addMoreCardsAfterBtn">➕ Thêm thẻ mới</button>
+          </div>
+        </div>
+      `;
+
+      const restartBtn = $('restartPracticeBtn');
+      if (restartBtn) {
+        restartBtn.onclick = () => {
+          initMyCardsPracticeQueue(true);
+          renderMyCardsPractice();
+        };
+      }
+      const viewListBtn = $('viewListAfterPracticeBtn');
+      if (viewListBtn) {
+        viewListBtn.onclick = () => {
+          App.mycardsViewTab = 'list';
+          renderMyCardsView();
+        };
+      }
+      const addMoreBtn = $('addMoreCardsAfterBtn');
+      if (addMoreBtn) {
+        addMoreBtn.onclick = () => openAddMyCardModal();
+      }
+      return;
+    }
+
+    // Case 3: Active Card
+    const card = App.mycardsQueue[App.mycardsCurrentIdx];
+    if ($('myPracticeCounterBadge')) {
+      $('myPracticeCounterBadge').textContent = `Thẻ ${App.mycardsCurrentIdx + 1} / ${App.mycardsQueue.length}`;
+    }
+
+    // Determine mode for this card
+    let effectiveMode = App.mycardsPracticeMode;
+    if (effectiveMode === 'mixed') {
+      if (!App.mycardsMixedModeMap[card.id]) {
+        const candidateModes = ['cloze', 'vi_en', 'en_vi'];
+        App.mycardsMixedModeMap[card.id] = candidateModes[Math.floor(Math.random() * candidateModes.length)];
+      }
+      effectiveMode = App.mycardsMixedModeMap[card.id];
+    }
+
+    const levelBadgeHtml = getMyCardLevelBadgeHtml(card.level);
+
+    // MODE 1: CLOZE / TYPING PRACTICE
+    if (effectiveMode === 'cloze') {
+      const clozeHint = generateClozeHint(card.en);
+      container.innerHTML = `
+        <div class="mycard-practice-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <span style="font-size:12px;font-weight:750;color:#0369a1;background:#e0f2fe;padding:4px 12px;border-radius:99px;">
+              ✍️ Dạng 1: Điền hết lại cụm từ
+            </span>
+            ${levelBadgeHtml}
+          </div>
+
+          <div style="font-size:13px;color:var(--muted);margin-bottom:4px;font-weight:600;">Nghĩa tiếng Việt:</div>
+          <div style="font-size:22px;font-weight:800;color:var(--navy);margin-bottom:14px;line-height:1.4;">
+            ${escapeHtml(card.vi)}
+          </div>
+
+          ${card.notes ? `<div style="font-size:12px;color:#64748b;margin-bottom:14px;">💡 Gợi ý: ${escapeHtml(card.notes)}</div>` : ''}
+
+          <div class="mycard-cloze-box">
+            <div style="font-size:11px;font-weight:750;color:#64748b;text-transform:uppercase;margin-bottom:6px;">Gợi ý chữ cái đầu:</div>
+            <div class="mycard-cloze-hint">${escapeHtml(clozeHint)}</div>
+            <input type="text" id="myCardClozeInput" class="mycard-cloze-input" placeholder="Gõ lại đầy đủ câu tiếng Anh rồi bấm Enter..." autocomplete="off">
+          </div>
+
+          <div id="myCardClozeFeedback" style="margin-top:14px;"></div>
+
+          <div id="myCardClozeActions" style="display:flex;justify-content:center;gap:10px;margin-top:16px;flex-wrap:wrap;">
+            <button class="btn primary" id="checkClozeAnswerBtn">Kiểm tra đáp án (Enter)</button>
+            <button class="btn outline" id="revealClozeAnswerBtn">👁️ Xem đáp án</button>
+            <button class="btn light" id="speakClozeHintBtn">🔊 Nghe</button>
+          </div>
+
+          <div id="myCardRatingArea" class="hidden">
+            ${render4RatingButtonsHtml()}
+          </div>
+        </div>
+      `;
+
+      const input = $('myCardClozeInput');
+      const feedback = $('myCardClozeFeedback');
+      const actions = $('myCardClozeActions');
+      const ratingArea = $('myCardRatingArea');
+      const checkBtn = $('checkClozeAnswerBtn');
+      const revealBtn = $('revealClozeAnswerBtn');
+      const speakBtn = $('speakClozeHintBtn');
+
+      if (input) {
+        setTimeout(() => input.focus(), 80);
+      }
+
+      if (speakBtn) {
+        speakBtn.onclick = () => playTTS(card.en, 0.85);
+      }
+
+      function handleClozeCheck(isForcedReveal = false) {
+        const userVal = input ? input.value : '';
+        const normUser = normalizeTextForComparison(userVal);
+        const normCorrect = normalizeTextForComparison(card.en);
+        const isCorrect = !isForcedReveal && (normUser === normCorrect);
+
+        if (input) {
+          input.disabled = true;
+          input.classList.add(isCorrect ? 'correct' : 'wrong');
+        }
+
+        if (actions) actions.classList.add('hidden');
+        if (ratingArea) ratingArea.classList.remove('hidden');
+
+        let feedbackHtml = '';
+        if (isCorrect) {
+          feedbackHtml = `
+            <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:14px;color:#065f46;font-size:14px;text-align:left;">
+              <div style="font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+                <span>🎉 Chính xác tuyệt đối!</span>
+                <button class="btn light btn-xs" id="speakCorrectAnswerBtn" style="padding:2px 8px;">🔊</button>
+              </div>
+              <div style="font-size:16px;font-weight:750;color:var(--navy);">${escapeHtml(card.en)}</div>
+              ${card.ipa ? `<div style="font-family:ui-monospace, monospace;color:#0284c7;font-size:13px;margin-top:4px;">${escapeHtml(card.ipa)}</div>` : ''}
+              ${card.example ? `
+                <div style="margin-top:10px;padding-top:10px;border-top:1px dashed #a7f3d0;font-size:13px;">
+                  <div style="font-weight:700;color:var(--navy);">“${escapeHtml(card.example)}”</div>
+                  ${card.example_vi ? `<div style="color:#047857;">${escapeHtml(card.example_vi)}</div>` : ''}
+                </div>
+              ` : ''}
+            </div>
+          `;
+        } else {
+          feedbackHtml = `
+            <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:14px;color:#991b1b;font-size:14px;text-align:left;">
+              <div style="font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+                <span>${isForcedReveal ? '📖 Đáp án chuẩn:' : '⚠️ So sánh kết quả:'}</span>
+                <button class="btn light btn-xs" id="speakCorrectAnswerBtn" style="padding:2px 8px;">🔊</button>
+              </div>
+              ${!isForcedReveal && userVal ? `
+                <div style="font-size:13px;color:#64748b;margin-bottom:6px;">
+                  Câu bạn gõ: <span style="font-weight:700;color:#334155;">${escapeHtml(userVal)}</span>
+                </div>
+              ` : ''}
+              <div style="font-size:16px;font-weight:750;color:var(--navy);margin-bottom:4px;">
+                ${generateDiffHtml(userVal, card.en)}
+              </div>
+              ${card.ipa ? `<div style="font-family:ui-monospace, monospace;color:#0284c7;font-size:13px;margin-top:4px;">${escapeHtml(card.ipa)}</div>` : ''}
+              ${card.example ? `
+                <div style="margin-top:10px;padding-top:10px;border-top:1px dashed #fecaca;font-size:13px;">
+                  <div style="font-weight:700;color:var(--navy);">“${escapeHtml(card.example)}”</div>
+                  ${card.example_vi ? `<div style="color:#64748b;">${escapeHtml(card.example_vi)}</div>` : ''}
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }
+
+        if (feedback) feedback.innerHTML = feedbackHtml;
+        const correctAudioBtn = $('speakCorrectAnswerBtn');
+        if (correctAudioBtn) correctAudioBtn.onclick = () => playTTS(card.en, 0.85);
+
+        if (App.mycardsAutoSpeak) {
+          playTTS(card.en, 0.85);
+        }
+
+        bindRatingButtons(card);
+      }
+
+      if (checkBtn) checkBtn.onclick = () => handleClozeCheck(false);
+      if (revealBtn) revealBtn.onclick = () => handleClozeCheck(true);
+      if (input) {
+        input.onkeydown = (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            handleClozeCheck(false);
+          }
+        };
+      }
+    }
+
+    // MODE 2: VI -> EN (Nhìn tiếng Việt đoán tiếng Anh)
+    else if (effectiveMode === 'vi_en') {
+      container.innerHTML = `
+        <div class="mycard-practice-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <span style="font-size:12px;font-weight:750;color:#047857;background:#d1fae5;padding:4px 12px;border-radius:99px;">
+              🇻🇳 Dạng 2: Việt ➔ Anh
+            </span>
+            ${levelBadgeHtml}
+          </div>
+
+          <div style="font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:600;">
+            Nghĩa tiếng Việt (Hãy nhẩm và phát âm to câu tiếng Anh tương ứng):
+          </div>
+          <div style="font-size:24px;font-weight:800;color:var(--navy);margin-bottom:16px;line-height:1.4;">
+            ${escapeHtml(card.vi)}
+          </div>
+
+          ${card.notes ? `<div style="font-size:12px;color:#64748b;margin-bottom:16px;">💡 Gợi ý: ${escapeHtml(card.notes)}</div>` : ''}
+
+          ${!App.mycardsCardRevealed ? `
+            <div style="margin:28px 0;">
+              <button class="btn primary btn-lg" id="flipMyCardBtn" style="padding:12px 28px;font-size:15px;font-weight:750;">
+                🔍 Lật thẻ xem câu tiếng Anh (Phím Space)
+              </button>
+            </div>
+          ` : `
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:20px;margin-top:20px;text-align:center;">
+              <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;">
+                <span style="font-size:24px;font-weight:800;color:var(--navy);">${escapeHtml(card.en)}</span>
+                <button class="btn light btn-sm" id="speakRevealedCardBtn" style="padding:4px 8px;">🔊</button>
+              </div>
+              ${card.ipa ? `<div style="font-family:ui-monospace, monospace;color:#0284c7;font-size:14px;margin-bottom:10px;">${escapeHtml(card.ipa)}</div>` : ''}
+              ${card.example ? `
+                <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;text-align:left;margin-top:12px;font-size:13px;">
+                  <div style="font-weight:700;color:var(--navy);margin-bottom:4px;">“${escapeHtml(card.example)}”</div>
+                  ${card.example_vi ? `<div style="color:var(--muted);">${escapeHtml(card.example_vi)}</div>` : ''}
+                </div>
+              ` : ''}
+            </div>
+            ${render4RatingButtonsHtml()}
+          `}
+        </div>
+      `;
+
+      const flipBtn = $('flipMyCardBtn');
+      if (flipBtn) {
+        flipBtn.onclick = () => {
+          App.mycardsCardRevealed = true;
+          renderMyCardsPractice();
+          if (App.mycardsAutoSpeak) playTTS(card.en, 0.85);
+        };
+      }
+
+      const speakBtn = $('speakRevealedCardBtn');
+      if (speakBtn) {
+        speakBtn.onclick = () => playTTS(card.en, 0.85);
+      }
+
+      if (App.mycardsCardRevealed) {
+        bindRatingButtons(card);
+      }
+    }
+
+    // MODE 3: EN -> VI (Nhìn tiếng Anh đoán tiếng Việt)
+    else if (effectiveMode === 'en_vi') {
+      container.innerHTML = `
+        <div class="mycard-practice-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <span style="font-size:12px;font-weight:750;color:#1e40af;background:#dbeafe;padding:4px 12px;border-radius:99px;">
+              🇺🇸 Dạng 3: Anh ➔ Việt
+            </span>
+            ${levelBadgeHtml}
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin:16px 0 6px;">
+            <span style="font-size:26px;font-weight:800;color:var(--navy);">${escapeHtml(card.en)}</span>
+            <button class="btn light btn-sm" id="speakFrontEnBtn" style="padding:4px 8px;">🔊</button>
+          </div>
+          ${card.ipa ? `<div style="font-family:ui-monospace, monospace;color:#0284c7;font-size:14px;margin-bottom:20px;">${escapeHtml(card.ipa)}</div>` : ''}
+
+          ${!App.mycardsCardRevealed ? `
+            <div style="margin:28px 0;">
+              <button class="btn primary btn-lg" id="flipMyCardBtn" style="padding:12px 28px;font-size:15px;font-weight:750;">
+                🔍 Lật thẻ xem nghĩa tiếng Việt (Phím Space)
+              </button>
+            </div>
+          ` : `
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:14px;padding:20px;margin-top:20px;text-align:center;">
+              <div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:6px;text-transform:uppercase;">Nghĩa tiếng Việt:</div>
+              <div style="font-size:22px;font-weight:800;color:#15803d;margin-bottom:10px;">
+                ${escapeHtml(card.vi)}
+              </div>
+              ${card.example ? `
+                <div style="background:#fff;border:1px solid #bbf7d0;border-radius:10px;padding:12px;text-align:left;margin-top:12px;font-size:13px;">
+                  <div style="font-weight:700;color:var(--navy);margin-bottom:4px;">“${escapeHtml(card.example)}”</div>
+                  ${card.example_vi ? `<div style="color:var(--muted);">${escapeHtml(card.example_vi)}</div>` : ''}
+                </div>
+              ` : ''}
+            </div>
+            ${render4RatingButtonsHtml()}
+          `}
+        </div>
+      `;
+
+      const speakBtn = $('speakFrontEnBtn');
+      if (speakBtn) {
+        speakBtn.onclick = () => playTTS(card.en, 0.85);
+      }
+
+      const flipBtn = $('flipMyCardBtn');
+      if (flipBtn) {
+        flipBtn.onclick = () => {
+          App.mycardsCardRevealed = true;
+          renderMyCardsPractice();
+        };
+      }
+
+      if (App.mycardsCardRevealed) {
+        bindRatingButtons(card);
+      }
+    }
+  }
+
+  // Bind the 4 rating buttons to card evaluation
+  function bindRatingButtons(card) {
+    const container = $('mycardsPracticeCardContainer');
+    if (!container) return;
+
+    container.querySelectorAll('.mem-btn').forEach(btn => {
+      btn.onclick = () => {
+        const rating = parseInt(btn.dataset.rating, 10);
+        App.srs.reviewMyCard(card.id, rating);
+
+        if (rating === 1) {
+          // Push back into current session queue
+          App.mycardsQueue.push(card);
+          showToast('🔁 Đã thêm thẻ vào cuối phiên để luyện tập lại!');
+        } else {
+          const labels = {
+            2: '🔵 Nhớ 1 ngày — Ngày mai ôn lại!',
+            3: '🟢 Đã nhớ 3 ngày — 3 ngày sau ôn lại!',
+            4: '🟣 Rất nhớ 6 ngày — 6 ngày sau ôn lại!'
+          };
+          showToast(labels[rating] || 'Đã lưu đánh giá ghi nhớ!');
+        }
+
+        App.mycardsCurrentIdx++;
+        App.mycardsCardRevealed = false;
+        renderMyCardsPractice();
+      };
+    });
+  }
+
+  // Render Card List & Manager
+  function renderMyCardsList() {
+    const container = $('mycardsListContainer');
+    if (!container) return;
+
+    const cards = App.srs.getMyCards(App.mycardsSelectedDeckId);
+    const searchVal = (App.mycardsSearchQuery || '').toLowerCase().trim();
+
+    const filtered = cards.filter(c => {
+      if (!searchVal) return true;
+      return (
+        (c.en && c.en.toLowerCase().includes(searchVal)) ||
+        (c.vi && c.vi.toLowerCase().includes(searchVal)) ||
+        (c.notes && c.notes.toLowerCase().includes(searchVal)) ||
+        (c.example && c.example.toLowerCase().includes(searchVal))
+      );
+    });
+
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:36px 16px;background:#f8fafc;border:1px dashed var(--line);border-radius:12px;">
+          <div style="font-size:36px;margin-bottom:8px;">🔍</div>
+          <p style="color:var(--muted);font-size:14px;margin:0 0 14px;">
+            ${cards.length === 0 ? 'Chủ đề này chưa có thẻ từ vựng nào.' : 'Không tìm thấy thẻ nào phù hợp với từ khóa.'}
+          </p>
+          <button class="btn primary btn-sm" id="emptyListAddCardBtn">➕ Thêm thẻ vào chủ đề</button>
+        </div>
+      `;
+      const btn = $('emptyListAddCardBtn');
+      if (btn) btn.onclick = () => openAddMyCardModal();
+      return;
+    }
+
+    let rowsHtml = filtered.map(c => {
+      const levelBadge = getMyCardLevelBadgeHtml(c.level);
+      return `
+        <tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="padding:12px 14px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <strong style="color:var(--navy);font-size:14px;">${escapeHtml(c.en)}</strong>
+              <button class="btn light btn-xs" data-speak="${escapeHtml(c.en)}" style="padding:2px 6px;">🔊</button>
+            </div>
+            ${c.ipa ? `<div style="font-family:ui-monospace, monospace;color:var(--muted);font-size:12px;margin-top:2px;">${escapeHtml(c.ipa)}</div>` : ''}
+          </td>
+          <td style="padding:12px 14px;color:#047857;font-weight:700;font-size:13px;">
+            ${escapeHtml(c.vi)}
+          </td>
+          <td style="padding:12px 14px;font-size:12px;color:#475569;max-width:260px;">
+            ${c.example ? `<div style="font-style:italic;margin-bottom:2px;">“${escapeHtml(c.example)}”</div>` : ''}
+            ${c.notes ? `<div style="color:var(--muted);">💡 ${escapeHtml(c.notes)}</div>` : ''}
+          </td>
+          <td style="padding:12px 14px;text-align:center;">
+            ${levelBadge}
+          </td>
+          <td style="padding:12px 14px;text-align:right;white-space:nowrap;">
+            <button class="btn btn-xs light edit-mycard-btn" data-id="${c.id}" title="Chỉnh sửa">✏️</button>
+            <button class="btn btn-xs light delete-mycard-btn" data-id="${c.id}" style="color:#dc2626;" title="Xóa thẻ">🗑️</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="background:#f8fafc;border-bottom:2px solid var(--line);text-align:left;color:var(--navy);font-size:12px;">
+              <th style="padding:10px 14px;">TỪ / CÂU TIẾNG ANH</th>
+              <th style="padding:10px 14px;">NGHĨA TIẾNG VIỆT</th>
+              <th style="padding:10px 14px;">VÍ DỤ & GHI CHÚ</th>
+              <th style="padding:10px 14px;text-align:center;">CẤP ĐỘ NHỚ</th>
+              <th style="padding:10px 14px;text-align:right;">THAO TÁC</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    // Bind edit/delete handlers
+    container.querySelectorAll('.edit-mycard-btn').forEach(b => {
+      b.onclick = () => openAddMyCardModal(b.dataset.id);
+    });
+    container.querySelectorAll('.delete-mycard-btn').forEach(b => {
+      b.onclick = () => {
+        if (confirm('Bạn có chắc chắn muốn xóa thẻ học này?')) {
+          App.srs.deleteMyCard(b.dataset.id);
+          showToast('Đã xóa thẻ thành công!');
+          initMyCardsPracticeQueue(true);
+          renderMyCardsView();
+        }
+      };
+    });
+
+    containerSpeakButtons(container);
+  }
+
+  // ==========================================
+  // MY CARDS & DECKS MODALS CONTROLLER
+  // ==========================================
+  function initMyCardsModals() {
+    // 1. Add / Edit Deck Modal
+    const deckModal = $('addDeckModal');
+    const openDeckBtn = $('openAddDeckModalBtn');
+    const closeDeckBtn = $('closeAddDeckModalBtn');
+    const cancelDeckBtn = $('cancelDeckBtn');
+    const saveDeckBtn = $('saveDeckBtn');
+    const editCurrentDeckBtn = $('editCurrentDeckBtn');
+    const deleteCurrentDeckBtn = $('deleteCurrentDeckBtn');
+
+    if (openDeckBtn) openDeckBtn.onclick = () => openAddDeckModal();
+    if (closeDeckBtn) closeDeckBtn.onclick = () => deckModal?.classList.add('hidden');
+    if (cancelDeckBtn) cancelDeckBtn.onclick = () => deckModal?.classList.add('hidden');
+
+    if (editCurrentDeckBtn) {
+      editCurrentDeckBtn.onclick = () => {
+        const deck = App.srs.getMyDecks().find(d => d.id === App.mycardsSelectedDeckId);
+        if (deck) openAddDeckModal(deck.id);
+      };
+    }
+
+    if (deleteCurrentDeckBtn) {
+      deleteCurrentDeckBtn.onclick = () => {
+        const decks = App.srs.getMyDecks();
+        if (decks.length <= 1) {
+          showToast('Không thể xóa chủ đề duy nhất còn lại.');
+          return;
+        }
+        const activeDeck = decks.find(d => d.id === App.mycardsSelectedDeckId);
+        if (!activeDeck) return;
+
+        if (confirm(`Bạn có chắc chắn muốn xóa toàn bộ chủ đề "${activeDeck.name}" cùng tất cả các thẻ trong đó?`)) {
+          App.srs.deleteDeck(activeDeck.id);
+          showToast(`Đã xóa chủ đề "${activeDeck.name}"!`);
+          const remaining = App.srs.getMyDecks();
+          App.mycardsSelectedDeckId = remaining[0]?.id || 'deck-daily';
+          initMyCardsPracticeQueue(true);
+          renderMyCardsView();
+        }
+      };
+    }
+
+    if (saveDeckBtn) {
+      saveDeckBtn.onclick = () => {
+        const nameInput = $('deckNameInput');
+        const descInput = $('deckDescInput');
+        const editId = $('deckEditId')?.value.trim();
+
+        const name = (nameInput?.value || '').trim();
+        const desc = (descInput?.value || '').trim();
+
+        if (!name) {
+          showToast('Vui lòng nhập tên chủ đề.');
+          nameInput?.focus();
+          return;
+        }
+
+        if (editId) {
+          App.srs.updateDeck(editId, name, desc);
+          showToast(`Đã cập nhật chủ đề "${name}"!`);
+        } else {
+          const newDeck = App.srs.addDeck(name, desc);
+          App.mycardsSelectedDeckId = newDeck.id;
+          showToast(`Đã tạo chủ đề mới: "${name}"!`);
+        }
+
+        deckModal?.classList.add('hidden');
+        initMyCardsPracticeQueue(true);
+        renderMyCardsView();
+      };
+    }
+
+    // 2. Add / Edit My Card Modal
+    const cardModal = $('addMyCardModal');
+    const openCardBtn = $('openAddMyCardModalBtn');
+    const closeCardBtn = $('closeAddMyCardModalBtn');
+    const cancelCardBtn = $('cancelMyCardBtn');
+    const saveCardBtn = $('saveMyCardBtn');
+    const previewSpeakBtn = $('speakMyCardPreviewBtn');
+
+    if (openCardBtn) openCardBtn.onclick = () => openAddMyCardModal();
+    if (closeCardBtn) closeCardBtn.onclick = () => cardModal?.classList.add('hidden');
+    if (cancelCardBtn) cancelCardBtn.onclick = () => cardModal?.classList.add('hidden');
+
+    if (previewSpeakBtn) {
+      previewSpeakBtn.onclick = () => {
+        const enVal = $('myCardEnInput')?.value.trim();
+        if (enVal) playTTS(enVal, 0.85);
+        else showToast('Hãy nhập từ hoặc câu tiếng Anh trước khi nghe.');
+      };
+    }
+
+    if (saveCardBtn) {
+      saveCardBtn.onclick = () => {
+        const enInput = $('myCardEnInput');
+        const viInput = $('myCardViInput');
+        const deckSelect = $('myCardDeckSelect');
+        const editId = $('myCardEditId')?.value.trim();
+
+        const en = (enInput?.value || '').trim();
+        const vi = (viInput?.value || '').trim();
+        const deckId = deckSelect?.value || App.mycardsSelectedDeckId;
+
+        if (!en) {
+          showToast('Vui lòng nhập từ hoặc câu tiếng Anh.');
+          enInput?.focus();
+          return;
+        }
+        if (!vi) {
+          showToast('Vui lòng nhập nghĩa tiếng Việt.');
+          viInput?.focus();
+          return;
+        }
+
+        const cardData = {
+          en,
+          vi,
+          ipa: $('myCardIpaInput')?.value.trim() || '',
+          example: $('myCardExampleInput')?.value.trim() || '',
+          example_vi: $('myCardExampleViInput')?.value.trim() || '',
+          notes: $('myCardNotesInput')?.value.trim() || ''
+        };
+
+        if (editId) {
+          App.srs.updateMyCard(editId, cardData);
+          showToast(`Đã cập nhật thẻ "${en}"!`);
+        } else {
+          App.srs.addMyCard(deckId, cardData);
+          showToast(`Đã thêm thẻ mới vào chủ đề!`);
+        }
+
+        cardModal?.classList.add('hidden');
+        if (App.mycardsSelectedDeckId !== deckId) {
+          App.mycardsSelectedDeckId = deckId;
+        }
+        initMyCardsPracticeQueue(true);
+        renderMyCardsView();
+      };
+    }
+
+    // 3. Sub-view Tabs (Practice vs List)
+    const practiceTabBtn = $('tabMyCardsPracticeBtn');
+    const listTabBtn = $('tabMyCardsListBtn');
+
+    if (practiceTabBtn) {
+      practiceTabBtn.onclick = () => {
+        App.mycardsViewTab = 'practice';
+        renderMyCardsView();
+      };
+    }
+    if (listTabBtn) {
+      listTabBtn.onclick = () => {
+        App.mycardsViewTab = 'list';
+        renderMyCardsView();
+      };
+    }
+
+    // 4. Mode Chips
+    $$('.mycard-mode-chip').forEach(chip => {
+      chip.onclick = () => {
+        App.mycardsPracticeMode = chip.dataset.mode;
+        App.mycardsCardRevealed = false;
+        renderMyCardsPractice();
+      };
+    });
+
+    // 5. Shuffle Toggle
+    const shuffleBtn = $('toggleMyCardShuffleBtn');
+    if (shuffleBtn) {
+      shuffleBtn.onclick = () => {
+        App.mycardsShuffle = !App.mycardsShuffle;
+        initMyCardsPracticeQueue(true);
+        renderMyCardsPractice();
+        showToast(App.mycardsShuffle ? '🔀 Đã bật trộn ngẫu nhiên thứ tự!' : '➡️ Đã chuyển sang thứ tự ban đầu');
+      };
+    }
+
+    // 6. Auto-speak toggle
+    const autoSpeakCheck = $('myCardAutoSpeakToggle');
+    if (autoSpeakCheck) {
+      autoSpeakCheck.onchange = (e) => {
+        App.mycardsAutoSpeak = e.target.checked;
+      };
+    }
+
+    // 7. Search input in list view
+    const searchInput = $('myCardsSearchInput');
+    if (searchInput) {
+      searchInput.oninput = (e) => {
+        App.mycardsSearchQuery = e.target.value;
+        renderMyCardsList();
+      };
+    }
+  }
+
+  function openAddDeckModal(editDeckId = null) {
+    const modal = $('addDeckModal');
+    if (!modal) return;
+    const title = $('deckModalTitle');
+    const idInput = $('deckEditId');
+    const nameInput = $('deckNameInput');
+    const descInput = $('deckDescInput');
+
+    if (editDeckId) {
+      const deck = App.srs.getMyDecks().find(d => d.id === editDeckId);
+      if (title) title.textContent = '✏️ Đổi Tên / Chỉnh Sửa Chủ Đề';
+      if (idInput) idInput.value = editDeckId;
+      if (nameInput) nameInput.value = deck ? deck.name : '';
+      if (descInput) descInput.value = deck ? (deck.description || '') : '';
+    } else {
+      if (title) title.textContent = '➕ Tạo Chủ Đề Học Tập Mới';
+      if (idInput) idInput.value = '';
+      if (nameInput) nameInput.value = '';
+      if (descInput) descInput.value = '';
+    }
+
+    modal.classList.remove('hidden');
+    nameInput?.focus();
+  }
+
+  function openAddMyCardModal(editCardId = null) {
+    const modal = $('addMyCardModal');
+    if (!modal) return;
+    const title = $('myCardModalTitle');
+    const idInput = $('myCardEditId');
+    const deckSelect = $('myCardDeckSelect');
+    const enInput = $('myCardEnInput');
+    const viInput = $('myCardViInput');
+    const ipaInput = $('myCardIpaInput');
+    const exampleInput = $('myCardExampleInput');
+    const exampleViInput = $('myCardExampleViInput');
+    const notesInput = $('myCardNotesInput');
+
+    // Populate decks select
+    if (deckSelect) {
+      const decks = App.srs.getMyDecks();
+      deckSelect.innerHTML = decks.map(d => `
+        <option value="${d.id}" ${d.id === App.mycardsSelectedDeckId ? 'selected' : ''}>${escapeHtml(d.name)}</option>
+      `).join('');
+    }
+
+    if (editCardId) {
+      const allCards = App.srs.getMyCards();
+      const card = allCards.find(c => c.id === editCardId);
+      if (title) title.textContent = '✏️ Chỉnh Sửa Thẻ Học';
+      if (idInput) idInput.value = editCardId;
+      if (deckSelect && card) deckSelect.value = card.deck_id;
+      if (enInput && card) enInput.value = card.en;
+      if (viInput && card) viInput.value = card.vi;
+      if (ipaInput && card) ipaInput.value = card.ipa || '';
+      if (exampleInput && card) exampleInput.value = card.example || '';
+      if (exampleViInput && card) exampleViInput.value = card.example_vi || '';
+      if (notesInput && card) notesInput.value = card.notes || '';
+    } else {
+      if (title) title.textContent = '➕ Thêm Thẻ Vào Chủ Đề';
+      if (idInput) idInput.value = '';
+      if (enInput) enInput.value = '';
+      if (viInput) viInput.value = '';
+      if (ipaInput) ipaInput.value = '';
+      if (exampleInput) exampleInput.value = '';
+      if (exampleViInput) exampleViInput.value = '';
+      if (notesInput) notesInput.value = '';
+    }
+
+    modal.classList.remove('hidden');
+    enInput?.focus();
   }
 
   // ==========================================
@@ -3615,13 +4583,61 @@
       };
     }
 
-    // Initialize Voice, Vocab Quick Def, and Custom Vocab Modals
+    // Initialize Voice, Vocab Quick Def, Custom Vocab, and My Cards Modals
     initVoiceSettings();
     initVocabDefModal();
     initCustomWordModal();
+    initMyCardsModals();
 
-    // Anki Keyboard Shortcuts Handler
+    // Keyboard Shortcuts Handler (Anki & My Cards)
     window.addEventListener('keydown', (e) => {
+      // 1. My Cards Practice Shortcuts
+      if (App.currentView === 'mycards' && App.mycardsViewTab === 'practice') {
+        const tag = (document.activeElement && document.activeElement.tagName) || '';
+
+        // If inside Cloze typing input
+        if (tag === 'INPUT' && document.activeElement.id === 'myCardClozeInput') {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const checkBtn = $('checkClozeAnswerBtn');
+            if (checkBtn) checkBtn.click();
+          }
+          return;
+        }
+
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+        if (e.code === 'Space' || e.key === ' ') {
+          e.preventDefault();
+          const flipBtn = $('flipMyCardBtn');
+          if (flipBtn) {
+            flipBtn.click();
+          } else {
+            const revealBtn = $('revealClozeAnswerBtn');
+            if (revealBtn && !revealBtn.classList.contains('hidden')) {
+              revealBtn.click();
+            }
+          }
+        } else if (e.key === '1') {
+          const btn = document.querySelector('.mycard-memory-ratings .mem-btn[data-rating="1"]');
+          if (btn) btn.click();
+        } else if (e.key === '2') {
+          const btn = document.querySelector('.mycard-memory-ratings .mem-btn[data-rating="2"]');
+          if (btn) btn.click();
+        } else if (e.key === '3') {
+          const btn = document.querySelector('.mycard-memory-ratings .mem-btn[data-rating="3"]');
+          if (btn) btn.click();
+        } else if (e.key === '4') {
+          const btn = document.querySelector('.mycard-memory-ratings .mem-btn[data-rating="4"]');
+          if (btn) btn.click();
+        } else if (e.key.toLowerCase() === 'r' || e.key.toLowerCase() === 's') {
+          const curCard = App.mycardsQueue[App.mycardsCurrentIdx];
+          if (curCard) playTTS(curCard.en, 0.85);
+        }
+        return;
+      }
+
+      // 2. Anki Flashcard Shortcuts
       if (App.currentView !== 'vocabulary' || App.vocabMode !== 'flashcard') return;
       const tag = (document.activeElement && document.activeElement.tagName) || '';
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;

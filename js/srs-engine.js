@@ -44,6 +44,76 @@
           writing_minutes: 0
         },
         custom_vocab: [],
+        my_decks: [
+          {
+            id: 'deck-daily',
+            name: 'Tiếng Anh hằng ngày',
+            description: 'Các mẫu câu và cụm từ giao tiếp hằng ngày thông dụng',
+            created_at: new Date().toISOString()
+          }
+        ],
+        my_cards: [
+          {
+            id: 'card-daily-1',
+            deck_id: 'deck-daily',
+            en: 'Good morning! How are you doing today?',
+            vi: 'Chào buổi sáng! Hôm nay bạn thế nào?',
+            ipa: '/ɡʊd ˈmɔːnɪŋ haʊ ɑː juː ˈduːɪŋ/',
+            example: 'Good morning! How are you doing today? - I am doing very well, thank you.',
+            example_vi: 'Chào buổi sáng! Hôm nay bạn thế nào? - Tôi rất khỏe, cảm ơn bạn.',
+            notes: 'Mẫu câu chào hỏi tự nhiên mỗi ngày',
+            interval: 0,
+            reps: 0,
+            due_date: new Date().toISOString(),
+            level: 'new', // 'new', 'again', 'day1', 'day3', 'day6'
+            created_at: new Date().toISOString()
+          },
+          {
+            id: 'card-daily-2',
+            deck_id: 'deck-daily',
+            en: 'Could you please help me with this?',
+            vi: 'Bạn có thể giúp tôi việc này được không?',
+            ipa: '/kʊd juː pliːz help miː wɪð ðɪs/',
+            example: 'Could you please help me with this report?',
+            example_vi: 'Bạn có thể giúp tôi làm báo cáo này được không?',
+            notes: 'Cách nhờ giúp đỡ lịch sự',
+            interval: 0,
+            reps: 0,
+            due_date: new Date().toISOString(),
+            level: 'new',
+            created_at: new Date().toISOString()
+          },
+          {
+            id: 'card-daily-3',
+            deck_id: 'deck-daily',
+            en: 'I understand what you mean.',
+            vi: 'Tôi hiểu ý bạn muốn nói rồi.',
+            ipa: '/aɪ ˌʌndəˈstænd wɒt juː miːn/',
+            example: 'Yes, I understand what you mean now.',
+            example_vi: 'Vâng, bây giờ tôi hiểu ý bạn rồi.',
+            notes: 'Xác nhận thông tin trong cuộc trò chuyện',
+            interval: 0,
+            reps: 0,
+            due_date: new Date().toISOString(),
+            level: 'new',
+            created_at: new Date().toISOString()
+          },
+          {
+            id: 'card-daily-4',
+            deck_id: 'deck-daily',
+            en: 'Have a wonderful day!',
+            vi: 'Chúc bạn một ngày tuyệt vời nhé!',
+            ipa: '/hæv ə ˈwʌndəfʊl deɪ/',
+            example: 'Thank you for your help. Have a wonderful day!',
+            example_vi: 'Cảm ơn sự giúp đỡ của bạn. Chúc bạn một ngày tuyệt vời!',
+            notes: 'Lời chúc kết thúc cuộc trò chuyện',
+            interval: 0,
+            reps: 0,
+            due_date: new Date().toISOString(),
+            level: 'new',
+            created_at: new Date().toISOString()
+          }
+        ],
         google_drive_config: {
           client_id: '',
           last_synced: null,
@@ -64,6 +134,19 @@
           if (parsed && parsed.schema_version === SCHEMA_VERSION) {
             if (!Array.isArray(parsed.custom_vocab)) {
               parsed.custom_vocab = [];
+            }
+            if (!Array.isArray(parsed.my_decks) || parsed.my_decks.length === 0) {
+              parsed.my_decks = [
+                {
+                  id: 'deck-daily',
+                  name: 'Tiếng Anh hằng ngày',
+                  description: 'Các mẫu câu và cụm từ giao tiếp hằng ngày thông dụng',
+                  created_at: new Date().toISOString()
+                }
+              ];
+            }
+            if (!Array.isArray(parsed.my_cards)) {
+              parsed.my_cards = [];
             }
             if (!parsed.google_drive_config) {
               parsed.google_drive_config = { client_id: '', last_synced: null, file_id: null };
@@ -378,6 +461,208 @@
       return this.state.custom_vocab.length < initialLen;
     }
 
+    // ==========================================
+    // MY CARDS & CUSTOM DECKS MANAGEMENT
+    // ==========================================
+    getMyDecks() {
+      if (!Array.isArray(this.state.my_decks)) {
+        this.state.my_decks = [];
+      }
+      return this.state.my_decks;
+    }
+
+    addDeck(name, description = '') {
+      const trimmed = String(name || '').trim();
+      if (!trimmed) throw new Error('Tên chủ đề / trường không được để trống.');
+      if (!Array.isArray(this.state.my_decks)) this.state.my_decks = [];
+
+      const id = 'deck-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+      const newDeck = {
+        id,
+        name: trimmed,
+        description: String(description || '').trim(),
+        created_at: new Date().toISOString()
+      };
+      this.state.my_decks.push(newDeck);
+      this.saveState();
+      return newDeck;
+    }
+
+    updateDeck(deckId, updatedFields = {}) {
+      if (!Array.isArray(this.state.my_decks)) return null;
+      const idx = this.state.my_decks.findIndex(d => d.id === deckId);
+      if (idx === -1) return null;
+      this.state.my_decks[idx] = {
+        ...this.state.my_decks[idx],
+        ...updatedFields,
+        id: deckId,
+        updated_at: new Date().toISOString()
+      };
+      this.saveState();
+      return this.state.my_decks[idx];
+    }
+
+    deleteDeck(deckId) {
+      if (!Array.isArray(this.state.my_decks)) return false;
+      this.state.my_decks = this.state.my_decks.filter(d => d.id !== deckId);
+      if (Array.isArray(this.state.my_cards)) {
+        this.state.my_cards = this.state.my_cards.filter(c => c.deck_id !== deckId);
+      }
+      this.saveState();
+      return true;
+    }
+
+    getMyCards(deckId = null) {
+      if (!Array.isArray(this.state.my_cards)) {
+        this.state.my_cards = [];
+      }
+      if (deckId && deckId !== 'all') {
+        return this.state.my_cards.filter(c => c.deck_id === deckId);
+      }
+      return this.state.my_cards;
+    }
+
+    addMyCard(deckIdOrData, maybeData = {}) {
+      let cardData = {};
+      let targetDeckId = null;
+
+      if (typeof deckIdOrData === 'string') {
+        targetDeckId = deckIdOrData;
+        cardData = maybeData || {};
+      } else if (typeof deckIdOrData === 'object' && deckIdOrData !== null) {
+        cardData = deckIdOrData;
+        targetDeckId = cardData.deck_id || null;
+      }
+
+      const en = String(cardData.en || '').trim();
+      const vi = String(cardData.vi || '').trim();
+      if (!en || !vi) throw new Error('Từ / cụm tiếng Anh và nghĩa tiếng Việt không được để trống.');
+      if (!Array.isArray(this.state.my_cards)) this.state.my_cards = [];
+
+      const deckId = targetDeckId || (this.state.my_decks[0] ? this.state.my_decks[0].id : 'deck-daily');
+      const id = 'card-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+
+      const newCard = {
+        id,
+        deck_id: deckId,
+        en,
+        vi,
+        ipa: cardData.ipa ? String(cardData.ipa).trim() : '',
+        example: cardData.example ? String(cardData.example).trim() : '',
+        example_vi: cardData.example_vi ? String(cardData.example_vi).trim() : '',
+        notes: cardData.notes ? String(cardData.notes).trim() : '',
+        interval: 0,
+        reps: 0,
+        due_date: new Date().toISOString(),
+        level: 'new', // 'new', 'again', 'day1', 'day3', 'day6'
+        last_reviewed_at: null,
+        created_at: new Date().toISOString()
+      };
+
+      this.state.my_cards.unshift(newCard);
+      this.saveState();
+      return newCard;
+    }
+
+    updateMyCard(cardId, cardData = {}) {
+      if (!Array.isArray(this.state.my_cards)) return null;
+      const idx = this.state.my_cards.findIndex(c => c.id === cardId);
+      if (idx === -1) return null;
+
+      const current = this.state.my_cards[idx];
+      this.state.my_cards[idx] = {
+        ...current,
+        ...cardData,
+        id: current.id,
+        updated_at: new Date().toISOString()
+      };
+
+      this.saveState();
+      return this.state.my_cards[idx];
+    }
+
+    deleteMyCard(cardId) {
+      if (!Array.isArray(this.state.my_cards)) return false;
+      const initial = this.state.my_cards.length;
+      this.state.my_cards = this.state.my_cards.filter(c => c.id !== cardId);
+      this.saveState();
+      return this.state.my_cards.length < initial;
+    }
+
+    // 4 Memory Rating Buttons explicitly requested:
+    // 1 = Học lại (again: ngay trong phiên / hôm nay)
+    // 2 = Nhớ là 1 ngày sau học lại (day1: giãn cách 1 ngày)
+    // 3 = Đã nhớ 3 ngày (day3: giãn cách 3 ngày)
+    // 4 = Rất nhớ 6 ngày (day6: giãn cách 6 ngày)
+    reviewMyCard(cardId, rating = 2) {
+      if (!Array.isArray(this.state.my_cards)) return null;
+      const card = this.state.my_cards.find(c => c.id === cardId);
+      if (!card) return null;
+
+      const now = new Date();
+      card.reps = (card.reps || 0) + 1;
+      card.last_reviewed_at = now.toISOString();
+
+      switch (rating) {
+        case 1: // Học lại
+          card.interval = 0;
+          card.level = 'again';
+          card.due_date = now.toISOString();
+          break;
+        case 2: // Nhớ là 1 ngày sau học lại
+          card.interval = 1;
+          card.level = 'day1';
+          card.due_date = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000).toISOString();
+          break;
+        case 3: // Đã nhớ 3 ngày
+          card.interval = 3;
+          card.level = 'day3';
+          card.due_date = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString();
+          break;
+        case 4: // Rất nhớ 6 ngày
+          card.interval = 6;
+          card.level = 'day6';
+          card.due_date = new Date(now.getTime() + 6 * 24 * 60 * 60 * 1000).toISOString();
+          break;
+      }
+
+      this.saveState();
+      return card;
+    }
+
+    getMyCardsDue(deckId = null) {
+      const cards = this.getMyCards(deckId);
+      const now = new Date();
+      return cards.filter(c => !c.due_date || new Date(c.due_date) <= now || c.level === 'again');
+    }
+
+    getMyCardsStats(deckId = null) {
+      const cards = this.getMyCards(deckId);
+      const now = new Date();
+      let due = 0, again = 0, day1 = 0, day3 = 0, day6 = 0, newCards = 0;
+
+      cards.forEach(c => {
+        if (!c.due_date || new Date(c.due_date) <= now || c.level === 'again') {
+          due++;
+        }
+        if (c.level === 'again') again++;
+        else if (c.level === 'day1') day1++;
+        else if (c.level === 'day3') day3++;
+        else if (c.level === 'day6') day6++;
+        else newCards++;
+      });
+
+      return {
+        total: cards.length,
+        due,
+        again,
+        day1,
+        day3,
+        day6,
+        newCards
+      };
+    }
+
     // Toggle difficult flag
     toggleDifficult(vocabId) {
       if (!this.state.vocab_srs[vocabId]) {
@@ -625,6 +910,19 @@
         this.state = parsed.state;
         if (!Array.isArray(this.state.custom_vocab)) {
           this.state.custom_vocab = [];
+        }
+        if (!Array.isArray(this.state.my_decks) || this.state.my_decks.length === 0) {
+          this.state.my_decks = [
+            {
+              id: 'deck-daily',
+              name: 'Tiếng Anh hằng ngày',
+              description: 'Các mẫu câu và cụm từ giao tiếp hằng ngày thông dụng',
+              created_at: new Date().toISOString()
+            }
+          ];
+        }
+        if (!Array.isArray(this.state.my_cards)) {
+          this.state.my_cards = [];
         }
         if (!this.state.google_drive_config) {
           this.state.google_drive_config = { client_id: '', last_synced: null, file_id: null };
