@@ -1,0 +1,13 @@
+{
+  "name": "english-hub-local",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local English learning hub with Listening, Speaking, Reading, Writing and optional OpenAI feedback",
+  "scripts": {
+    "start": "node server.js",
+    "deploy": "powershell -ExecutionPolicy Bypass -File deploy-github-pages.ps1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "English Hub — Lộ trình 365 Ngày Tự Học Tiếng Anh",
+  "short_name": "English Hub",
+  "description": "Hệ thống tự học tiếng Anh cá nhân từ mất gốc đến giao tiếp đời sống và kỹ thuật",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f1e36",
+  "theme_color": "#0f1e36",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230f1e36'/><text x='50' y='65' font-size='48' font-weight='900' font-family='sans-serif' fill='%23f5b942' text-anchor='middle'>Aa</text></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
