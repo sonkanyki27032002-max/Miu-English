@@ -150,8 +150,11 @@
     const target = $(viewName + 'View');
     if (target) target.classList.remove('hidden');
 
-    // Update active nav buttons
+    // Update active nav buttons (Desktop Sidebar & Mobile Bottom Nav)
     $$('.navbtn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.view === viewName);
+    });
+    $$('.mobile-nav-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.view === viewName);
     });
 
@@ -182,6 +185,7 @@
     
     if ($('dashCurrentDay')) $('dashCurrentDay').textContent = `Ngày ${currentDay} / 365`;
     if ($('dashStreak')) $('dashStreak').textContent = `${streak} ngày liên tiếp 🔥`;
+    if ($('topStreakText')) $('topStreakText').textContent = `${streak} ngày`;
     if ($('dashCompletedCount')) $('dashCompletedCount').textContent = `${completedCount} / 365 bài (${pct}%)`;
     if ($('dashProgressBar')) $('dashProgressBar').style.width = `${pct}%`;
     
@@ -3941,7 +3945,7 @@
         const rate = activeBtn ? parseFloat(activeBtn.dataset.rate || activeBtn.dataset.speed) : 0.85;
         if (window.speechEngine) {
           if (voiceName) window.speechEngine.setVoice('en-US', voiceName);
-          window.speechEngine.speak('Hello! Welcome to English Hub 52 Weeks. Good luck with your study.', { rate, lang: 'en-US' });
+          window.speechEngine.speak('Hello! Welcome to Miu Student English. Good luck with your study.', { rate, lang: 'en-US' });
         }
       };
     }
@@ -4050,8 +4054,8 @@
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({
-            title: 'Sao lưu English Hub',
-            text: 'Tệp sao lưu tiến độ và từ vựng English Hub cá nhân',
+            title: 'Sao lưu Miu Student English',
+            text: 'Tệp sao lưu tiến độ và từ vựng Miu Student English cá nhân',
             files: [file]
           });
           showToast('Đã mở menu Chia sẻ. Hãy chọn Google Drive để lưu nhé!');
@@ -4589,6 +4593,52 @@
     initCustomWordModal();
     initMyCardsModals();
 
+    // Mobile Bottom Navigation & More Sheet Listeners
+    $$('.mobile-nav-btn[data-view]').forEach(btn => {
+      btn.onclick = () => navigateTo(btn.dataset.view);
+    });
+
+    const openMoreSheetBtn = $('openMobileMoreSheetBtn');
+    const moreSheet = $('mobileMoreSheet');
+    const closeMoreSheetBtn = $('closeMobileMoreSheetBtn');
+    const closeMoreBackdrop = $('closeMobileMoreBackdrop');
+
+    if (openMoreSheetBtn && moreSheet) {
+      openMoreSheetBtn.onclick = () => moreSheet.classList.remove('hidden');
+    }
+    if (closeMoreSheetBtn && moreSheet) {
+      closeMoreSheetBtn.onclick = () => moreSheet.classList.add('hidden');
+    }
+    if (closeMoreBackdrop && moreSheet) {
+      closeMoreBackdrop.onclick = () => moreSheet.classList.add('hidden');
+    }
+
+    // Sheet Item clicks
+    $$('.mobile-sheet-item[data-go]').forEach(item => {
+      item.onclick = () => {
+        if (moreSheet) moreSheet.classList.add('hidden');
+        navigateTo(item.dataset.go);
+      };
+    });
+
+    const sheetVoiceBtn = $('sheetVoiceBtn');
+    if (sheetVoiceBtn) {
+      sheetVoiceBtn.onclick = () => {
+        if (moreSheet) moreSheet.classList.add('hidden');
+        const vModal = $('voiceSettingsModal');
+        if (vModal) vModal.classList.remove('hidden');
+      };
+    }
+
+    const sheetGuideBtn = $('sheetGuideBtn');
+    if (sheetGuideBtn) {
+      sheetGuideBtn.onclick = () => {
+        if (moreSheet) moreSheet.classList.add('hidden');
+        const gBtn = $('showMobileGuideBtn');
+        if (gBtn) gBtn.click();
+      };
+    }
+
     // Keyboard Shortcuts Handler (Anki & My Cards)
     window.addEventListener('keydown', (e) => {
       // 1. My Cards Practice Shortcuts
@@ -4678,7 +4728,7 @@
 
     // Initial render
     renderDashboard();
-    console.info('English Hub V2.0 application initialized successfully.');
+    console.info('Miu Student English application initialized successfully.');
   }
 
   // Run on DOM ready

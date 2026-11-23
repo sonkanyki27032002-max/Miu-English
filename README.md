@@ -1,6 +1,6 @@
-# ENGLISH HUB V1 — HỆ THỐNG TỰ HỌC TIẾNG ANH 365 NGÀY (A0 → B1)
+# MIU STUDENT ENGLISH 🎓🐱 — HỆ THỐNG TỰ HỌC TIẾNG ANH 365 NGÀY (A0 → B1)
 
-Website học tiếng Anh cá nhân chạy offline trên máy tính, giao diện tiếng Việt chuẩn mực, được thiết kế chuyên sâu cho người bắt đầu từ số 0 (mất gốc) đến giao tiếp đời sống và công việc kỹ thuật/nhà xưởng/SHE (Safety, Health & Environment) trong 12 tháng.
+Ứng dụng học tiếng Anh cá nhân đồng hành cùng trợ lý Bé Miu tốt nghiệp, giao diện tối ưu hóa cho điện thoại và máy tính, chạy offline mượt mà, hỗ trợ sao lưu Google Drive và triển khai GitHub Pages. Thiết kế chuyên sâu cho người bắt đầu từ số 0 (mất gốc) đến giao tiếp đời sống và công việc kỹ thuật/nhà xưởng/SHE trong 12 tháng.
 
 ---
 

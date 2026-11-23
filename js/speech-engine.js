@@ -366,7 +366,7 @@
     testVoice(voiceURI, sampleText, lang = 'en-US') {
       const voice = this.voices.find(v => v.voiceURI === voiceURI);
       const text = sampleText || (lang.startsWith('vi') 
-        ? "Xin chào! Đây là giọng đọc tiếng Việt được cấu hình cho ứng dụng English Hub."
+        ? "Xin chào! Đây là giọng đọc tiếng Việt được cấu hình cho ứng dụng Miu Student English."
         : "Hello! This is your selected English voice for daily listening and speaking practice.");
       
       this.speak(text, { lang, rate: this.currentRate });

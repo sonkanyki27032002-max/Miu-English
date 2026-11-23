@@ -2,13 +2,15 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0f1e36">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="English Hub">
+<meta name="apple-mobile-web-app-title" content="Miu English">
+<link rel="icon" type="image/jpeg" href="assets/miu-logo.jpg">
+<link rel="apple-touch-icon" href="assets/miu-logo.jpg">
 <link rel="manifest" href="manifest.json">
-<title>English Hub — Lộ trình 365 Ngày Tự Học Tiếng Anh Từ Mất Gốc</title>
+<title>Miu Student English — 365 Ngày Tự Học Tiếng Anh Cùng Bé Miu 🎓</title>
 <style>
 :root {
   --navy: #0f1e36;
@@ -64,6 +66,37 @@ button { cursor: pointer; }
   gap: 12px;
   font-weight: 800;
   letter-spacing: .02em;
+  text-decoration: none;
+  cursor: pointer;
+}
+.brand-avatar-box {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(135deg, #f59e0b, #ec4899, #3b82f6);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+  flex-shrink: 0;
+}
+.brand-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+  background: #fff;
+}
+.brand-avatar-badge {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  font-size: 11px;
+  background: #ffffff;
+  border-radius: 50%;
+  line-height: 1;
+  padding: 2px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
 }
 .brandmark {
   display: grid;
@@ -77,8 +110,8 @@ button { cursor: pointer; }
   font-weight: 900;
   box-shadow: 0 2px 8px rgba(245, 185, 66, 0.4);
 }
-.brand-text strong { display: block; font-size: 16px; color: #fff; }
-.brand-text small { display: block; font-size: 11px; letter-spacing: .12em; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
+.brand-text strong { display: block; font-size: 15px; color: #fff; font-weight: 850; letter-spacing: 0.01em; }
+.brand-text small { display: block; font-size: 10px; letter-spacing: .08em; color: #cbd5e1; font-weight: 700; text-transform: uppercase; }
 .top-meta {
   display: flex;
   align-items: center;
@@ -1360,12 +1393,260 @@ textarea.field { min-height: 100px; resize: vertical; }
 }
 @keyframes toastIn { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
-/* Responsive */
+/* ==========================================
+   MIU STUDENT ENGLISH — MOBILE-FIRST DESIGN & POLISH
+   ========================================== */
+html, body {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Miu Hero Card */
+.miu-hero-card {
+  background: linear-gradient(135deg, #0b1528 0%, #172a46 45%, #1e3a8a 100%);
+  border-radius: 22px;
+  padding: clamp(18px, 3.5vw, 28px);
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(15, 30, 54, 0.22);
+  margin-bottom: 22px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.miu-hero-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.18) 0%, transparent 70%);
+  pointer-events: none;
+}
+.miu-hero-flex {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+.miu-mascot-avatar {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  padding: 3px;
+  background: linear-gradient(135deg, #f59e0b, #ec4899, #3b82f6);
+  flex-shrink: 0;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  animation: floatMascot 4s ease-in-out infinite;
+}
+@keyframes floatMascot {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.miu-mascot-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+  background: #fff;
+}
+.miu-hero-body { flex: 1; }
+.miu-hero-tag-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+/* Mobile Bottom Navigation Bar */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(226, 232, 240, 0.95);
+  padding: 6px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+  z-index: 998;
+  box-shadow: 0 -4px 20px rgba(15, 30, 54, 0.08);
+  justify-content: space-around;
+  align-items: center;
+}
+
+.mobile-nav-btn {
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: #64748b;
+  padding: 6px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  transition: all 0.15s ease;
+  min-width: 58px;
+  position: relative;
+  touch-action: manipulation;
+}
+
+.mobile-nav-btn .m-nav-icon {
+  font-size: 20px;
+  line-height: 1;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.mobile-nav-btn.active {
+  color: var(--navy);
+}
+
+.mobile-nav-btn.active .m-nav-icon {
+  transform: translateY(-2px) scale(1.15);
+}
+
+.mobile-nav-btn.active::after {
+  content: '';
+  width: 16px;
+  height: 3px;
+  background: var(--blue);
+  border-radius: 99px;
+  position: absolute;
+  bottom: 1px;
+}
+
+.mobile-nav-btn.highlight-card-btn .mycard-nav-badge-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.mycard-nav-badge-wrap .m-nav-chip {
+  position: absolute;
+  top: -4px;
+  right: -10px;
+  background: linear-gradient(135deg, #ef4444, #f59e0b);
+  color: #fff;
+  font-size: 8px;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 6px;
+  letter-spacing: .02em;
+}
+
+/* Mobile Sheet */
+.mobile-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+}
+.mobile-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.mobile-sheet-content {
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto;
+  background: #ffffff;
+  border-radius: 24px 24px 0 0;
+  padding: 12px 18px calc(24px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.25);
+  animation: sheetUp .25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.mobile-sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: #cbd5e1;
+  border-radius: 99px;
+  margin: 0 auto 12px;
+}
+.mobile-sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 14px;
+}
+.mobile-sheet-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.mobile-sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.mobile-sheet-item:active {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  transform: scale(0.99);
+}
+.mobile-sheet-item .sheet-item-icon {
+  font-size: 22px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+.mobile-sheet-item .sheet-item-text strong {
+  display: block;
+  font-size: 14px;
+  color: var(--navy);
+  font-weight: 750;
+}
+.mobile-sheet-item .sheet-item-text small {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Responsive Breakpoints */
 @media (max-width: 1024px) {
-  .app-layout { grid-template-columns: 1fr; }
-  .sidebar { position: static; display: flex; overflow-x: auto; padding: 10px; gap: 6px; }
-  .side-label, .side-card { display: none; }
-  .navbtn { width: auto; white-space: nowrap; }
+  .app-layout { 
+    grid-template-columns: 1fr; 
+    padding: 14px 12px calc(88px + env(safe-area-inset-bottom, 0px));
+  }
+  .sidebar { display: none !important; }
+  .mobile-bottom-nav { display: flex; }
+  .topbar {
+    height: 62px;
+    padding: 0 14px;
+  }
+  .topbar .status-pill { display: none; }
+  .topbar .brand-text small { display: none; }
+  .topbar .brand-text strong { font-size: 14px; }
+  .top-meta { gap: 6px; }
+  .top-meta .btn { padding: 6px 10px; font-size: 12px; }
   .metrics-grid, .quick-tiles-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .srs-overview-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
@@ -1374,6 +1655,26 @@ textarea.field { min-height: 100px; resize: vertical; }
   .today-lesson-card { flex-direction: column; align-items: flex-start; }
   .srs-overview-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .flashcard-srs-actions { grid-template-columns: repeat(2, 1fr); }
+  .miu-hero-flex {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 14px;
+  }
+  .miu-mascot-avatar {
+    width: 80px;
+    height: 80px;
+  }
+  .miu-hero-tag-row {
+    justify-content: center;
+  }
+  .mycard-memory-ratings {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .topbar .top-meta #showMobileGuideBtn {
+    display: none;
+  }
+}
 /* Audio Status & Waveform Pulse */
 .audio-status-bar {
   display: flex;
@@ -1582,17 +1883,23 @@ textarea.field { min-height: 100px; resize: vertical; }
 <div class="app">
   <!-- Top Navigation Header -->
   <header class="topbar">
-    <div class="brand">
-      <div class="brandmark">Aa</div>
+    <div class="brand" data-go="home">
+      <div class="brand-avatar-box">
+        <img src="assets/miu-logo.jpg" alt="Miu Student English Logo" class="brand-avatar-img">
+        <span class="brand-avatar-badge">🎓</span>
+      </div>
       <div class="brand-text">
-        <strong>ENGLISH HUB</strong>
-        <small>365 NGÀY TỰ HỌC TỪ MẤT GỐC</small>
+        <strong>MIU STUDENT ENGLISH</strong>
+        <small>365 NGÀY HỌC CÙNG BÉ MIU 🎓</small>
       </div>
     </div>
     <div class="top-meta">
+      <span class="chip gold" id="topStreakChip" style="font-weight:800;font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;" data-go="home">
+        🔥 <span id="topStreakText">1 ngày</span>
+      </span>
       <div class="status-pill">
         <span class="dot"></span>
-        <span>Chế độ Ngoại tuyến (Offline-First)</span>
+        <span>Học Offline & Lưu Drive</span>
       </div>
       <button class="btn light btn-sm" id="openVoiceSettingsBtn" title="Cài đặt giọng đọc tiếng Anh và tốc độ">🎙️ Giọng đọc</button>
       <button class="btn light btn-sm" id="showMobileGuideBtn">📱 Mở trên ĐT</button>
@@ -1601,21 +1908,29 @@ textarea.field { min-height: 100px; resize: vertical; }
   </header>
 
   <div class="app-layout">
-    <!-- Sidebar Navigation -->
+    <!-- Sidebar Navigation (Desktop) -->
     <aside class="sidebar">
-      <div class="side-label">LỘ TRÌNH 1 NĂM</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:6px 6px 14px;border-bottom:1px solid var(--line);margin-bottom:12px;">
+        <img src="assets/miu-logo.jpg" alt="Bé Miu Avatar" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid #f59e0b;box-shadow:0 2px 8px rgba(245,158,11,0.25);">
+        <div>
+          <strong style="display:block;font-size:14px;color:var(--navy);font-weight:800;">Bé Miu 🎓</strong>
+          <small style="color:var(--muted);font-size:11px;">Trợ lý 365 Ngày</small>
+        </div>
+      </div>
+
+      <div class="side-label">MENU CHÍNH</div>
       <button class="navbtn active" data-view="home"><span class="ico">📊</span> Tổng quan</button>
       <button class="navbtn" data-view="curriculum"><span class="ico">📅</span> Lộ trình 365 Ngày</button>
-      <button class="navbtn" data-view="vocabulary"><span class="ico">🗂️</span> Kho từ vựng (1,648)</button>
       <button class="navbtn" data-view="mycards"><span class="ico">🃏</span> My Cards (Thẻ của tôi)</button>
+      <button class="navbtn" data-view="vocabulary"><span class="ico">🗂️</span> Kho từ vựng (1,648)</button>
       <button class="navbtn" data-view="srs"><span class="ico">🔄</span> Ôn tập thông minh</button>
       <button class="navbtn" data-view="reflex"><span class="ico">⚡</span> Đấu trường Phản xạ</button>
       <button class="navbtn" data-view="reading"><span class="ico">📖</span> Đọc hiểu tiếng Anh (15)</button>
       <button class="navbtn" data-view="backup"><span class="ico">💾</span> Dữ liệu & Sao lưu</button>
 
-      <div class="side-card">
-        <strong>💡 Nguyên tắc vàng</strong>
-        <p>Học 40–50 phút mỗi ngày. Nghe trước, nói theo, nắm ngữ pháp rồi mới làm bài viết.</p>
+      <div class="side-card" style="margin-top:16px;">
+        <strong>🐱 Lời nhắc của Miu:</strong>
+        <p>Học 30–45 phút mỗi ngày. Nghe trước, nhại lại thật to rồi làm bài tập nhé!</p>
       </div>
     </aside>
 
@@ -1624,24 +1939,45 @@ textarea.field { min-height: 100px; resize: vertical; }
       
       <!-- VIEW 1: HOME / DASHBOARD -->
       <section id="homeView" class="view-container">
-        <div class="dash-hero">
-          <span class="chip gold" style="margin-bottom:12px;">KHÓA HỌC 12 THÁNG TOÀN DIỆN</span>
-          <h1 class="dash-hero-title">Từ Mất Gốc Đến Giao Tiếp Đời Sống & Kỹ Thuật SHE</h1>
-          <p class="dash-hero-p">Hệ thống bài học 365 ngày chuẩn hóa: 1,648 từ vựng có IPA và ngữ cảnh, thuật toán ôn tập ngắt quãng (SRS), phản xạ âm cuối và xử lý tình huống nhà xưởng thực tế.</p>
-          
-          <div class="dash-hero-progress-row">
-            <div class="progress-meta-row">
-              <span id="dashCurrentDay">Đang tải tiến độ...</span>
-              <span id="dashCompletedCount">0 / 365 bài (0%)</span>
+        <!-- Modern Miu Hero Banner -->
+        <div class="dash-hero miu-hero-card">
+          <div class="miu-hero-flex">
+            <div class="miu-mascot-avatar">
+              <img src="assets/miu-logo.jpg" alt="Miu Mascot" class="miu-mascot-img">
             </div>
-            <div class="dash-progress-track">
-              <div id="dashProgressBar" class="dash-progress-fill"></div>
-            </div>
-          </div>
+            <div class="miu-hero-body">
+              <div class="miu-hero-tag-row">
+                <span class="chip gold" style="font-weight:800;font-size:11px;">🎓 MIU STUDENT ENGLISH · 365 NGÀY</span>
+                <span class="status-pill" style="background:rgba(255,255,255,0.15);padding:3px 10px;font-size:11px;">
+                  <span class="dot" style="background:#10b981;"></span> Bé Miu đồng hành
+                </span>
+              </div>
+              <h1 class="dash-hero-title" style="font-size:clamp(19px, 3.8vw, 25px);margin:8px 0 6px;line-height:1.3;">
+                Chào bạn! Cùng bé Miu học tiếng Anh mỗi ngày nhé! 🐱🎓
+              </h1>
+              <p class="dash-hero-p" style="font-size:13px;opacity:.9;margin-bottom:14px;line-height:1.5;">
+                Lộ trình 365 ngày chuẩn hóa từ mất gốc đến giao tiếp tự tin: 1,648 từ vựng có audio IPA, bộ thẻ tự học My Cards và đấu trường phản xạ.
+              </p>
 
-          <div class="row" style="gap:12px;">
-            <button class="btn gold btn-lg" id="dashResumeBtn">▶ Bắt đầu học hôm nay</button>
-            <button class="btn light btn-lg" data-go="curriculum">Xem lộ trình 365 ngày →</button>
+              <div class="dash-hero-progress-row" style="margin:12px 0 16px;">
+                <div class="progress-meta-row" style="font-size:12px;font-weight:750;">
+                  <span id="dashCurrentDay">Đang tải tiến độ...</span>
+                  <span id="dashCompletedCount">0 / 365 bài (0%)</span>
+                </div>
+                <div class="dash-progress-track" style="height:10px;border-radius:99px;background:rgba(255,255,255,0.2);">
+                  <div id="dashProgressBar" class="dash-progress-fill" style="background:linear-gradient(90deg, #f59e0b, #10b981);"></div>
+                </div>
+              </div>
+
+              <div class="row" style="gap:10px;flex-wrap:wrap;">
+                <button class="btn gold btn-lg" id="dashResumeBtn" style="flex:1;min-width:180px;font-weight:800;">
+                  ▶ Học bài hôm nay
+                </button>
+                <button class="btn light btn-lg" data-go="mycards" style="flex:1;min-width:160px;font-weight:800;background:rgba(255,255,255,0.2);color:#fff;border-color:rgba(255,255,255,0.3);">
+                  🃏 Mở My Cards (Ôn tập)
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1710,6 +2046,11 @@ textarea.field { min-height: 100px; resize: vertical; }
           </div>
         </div>
         <div class="quick-tiles-grid">
+          <div class="tile-card" data-go="mycards" style="border:2px solid #93c5fd;background:linear-gradient(to bottom, #eff6ff, #fff);">
+            <div class="t-icon">🃏</div>
+            <h3 style="color:#1d4ed8;">My Cards (Bộ thẻ của tôi)</h3>
+            <p>Tự thêm từ vựng và ôn tập 4 chế độ: Điền cụm từ, Việt - Anh, Anh - Việt và Trộn thẻ.</p>
+          </div>
           <div class="tile-card" data-go="srs">
             <div class="t-icon">🔄</div>
             <h3>Ôn tập SRS hôm nay</h3>
@@ -1722,13 +2063,8 @@ textarea.field { min-height: 100px; resize: vertical; }
           </div>
           <div class="tile-card" data-go="vocabulary">
             <div class="t-icon">🗂️</div>
-            <h3>Flashcards 2 chiều</h3>
-            <p>Lật thẻ Anh - Việt và tự đánh giá mức độ nhớ.</p>
-          </div>
-          <div class="tile-card" data-go="reflex">
-            <div class="t-icon">🛡️</div>
-            <h3>Xử lý tình huống SHE</h3>
-            <p>Giải quyết sự cố rò rỉ, nguy cơ trơn trượt và quy trình LOTO.</p>
+            <h3>Kho từ vựng & Flashcards</h3>
+            <p>1,648 từ vựng tra cứu nhanh và flashcards 2 chiều.</p>
           </div>
         </div>
       </section>
@@ -2230,7 +2566,7 @@ textarea.field { min-height: 100px; resize: vertical; }
 
         <div style="background:#fdf4ff;border:1px solid #f0abfc;border-radius:12px;padding:16px;">
           <strong style="color:#86198f;display:block;margin-bottom:6px;">Cách 2: Đưa lên mạng miễn phí (Vercel / GitHub Pages)</strong>
-          <p style="font-size:13px;color:#701a75;line-height:1.5;margin:0;">Do English Hub được viết 100% bằng HTML/JS/CSS tĩnh, bạn có thể tải thư mục này lên <b>GitHub Pages</b> hoặc <b>Vercel</b> hoàn toàn miễn phí để học mọi lúc mọi nơi bằng 4G/5G ngay cả khi máy tính đã tắt.</p>
+          <p style="font-size:13px;color:#701a75;line-height:1.5;margin:0;">Do Miu Student English được viết 100% bằng HTML/JS/CSS tĩnh, bạn có thể tải thư mục này lên <b>GitHub Pages</b> hoặc <b>Vercel</b> hoàn toàn miễn phí để học mọi lúc mọi nơi bằng 4G/5G ngay cả khi máy tính đã tắt.</p>
         </div>
       </div>
     </div>
@@ -2532,7 +2868,7 @@ textarea.field { min-height: 100px; resize: vertical; }
             <span>Mở Terminal hoặc Command Prompt tại thư mục dự án và chạy các lệnh:</span>
             <pre style="background:#0f172a;color:#f8fafc;padding:10px;border-radius:8px;font-size:12px;margin:8px 0;overflow-x:auto;">git init
 git add .
-git commit -m "Deploy English Hub"
+git commit -m "Deploy Miu Student English"
 git branch -M main
 git remote add origin https://github.com/YOUR_USERNAME/english-hub.git
 git push -u origin main</pre>
@@ -2567,6 +2903,98 @@ git push -u origin main</pre>
         <div style="display:flex;gap:8px;justify-content:space-between;">
           <button class="btn light btn-sm" id="speakVocabDefBtn">🔊 Nghe phát âm</button>
           <button class="btn primary btn-sm" id="addVocabDefSrsBtn">+ Thêm vào SRS ôn tập</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MOBILE BOTTOM NAVIGATION (THIẾT KẾ RIÊNG CHO ĐIỆN THOẠI)
+       ========================================== -->
+  <nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <button class="mobile-nav-btn active" data-view="home">
+      <span class="m-nav-icon">📊</span>
+      <span class="m-nav-label">Tổng quan</span>
+    </button>
+    <button class="mobile-nav-btn" data-view="curriculum">
+      <span class="m-nav-icon">📅</span>
+      <span class="m-nav-label">Lộ trình</span>
+    </button>
+    <button class="mobile-nav-btn highlight-card-btn" data-view="mycards">
+      <div class="mycard-nav-badge-wrap">
+        <span class="m-nav-icon">🃏</span>
+        <span class="m-nav-chip">HOT</span>
+      </div>
+      <span class="m-nav-label">My Cards</span>
+    </button>
+    <button class="mobile-nav-btn" data-view="reflex">
+      <span class="m-nav-icon">⚡</span>
+      <span class="m-nav-label">Phản xạ</span>
+    </button>
+    <button class="mobile-nav-btn" id="openMobileMoreSheetBtn">
+      <span class="m-nav-icon">☰</span>
+      <span class="m-nav-label">Thêm</span>
+    </button>
+  </nav>
+
+  <!-- MOBILE MORE ACTIONS BOTTOM SHEET -->
+  <div id="mobileMoreSheet" class="mobile-sheet-overlay hidden">
+    <div class="mobile-sheet-backdrop" id="closeMobileMoreBackdrop"></div>
+    <div class="mobile-sheet-content">
+      <div class="mobile-sheet-handle"></div>
+      <div class="mobile-sheet-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <img src="assets/miu-logo.jpg" alt="Miu Avatar" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #f59e0b;">
+          <div>
+            <strong style="color:var(--navy);font-size:15px;display:block;">Miu Student English</strong>
+            <small style="color:var(--muted);font-size:11px;">Mục học tập mở rộng 🎓</small>
+          </div>
+        </div>
+        <button class="btn btn-xs outline" id="closeMobileMoreSheetBtn">✕ Đóng</button>
+      </div>
+
+      <div class="mobile-sheet-grid">
+        <div class="mobile-sheet-item" data-go="vocabulary">
+          <span class="sheet-item-icon">🗂️</span>
+          <div class="sheet-item-text">
+            <strong>Kho từ vựng toàn diện (1,648)</strong>
+            <small>Tra cứu nhanh, phát âm IPA, từ đồng nghĩa</small>
+          </div>
+        </div>
+        <div class="mobile-sheet-item" data-go="srs">
+          <span class="sheet-item-icon">🔄</span>
+          <div class="sheet-item-text">
+            <strong>Ôn tập thông minh (Anki SRS)</strong>
+            <small>Lặp lại ngắt quãng theo đường cong quên</small>
+          </div>
+        </div>
+        <div class="mobile-sheet-item" data-go="reading">
+          <span class="sheet-item-icon">📖</span>
+          <div class="sheet-item-text">
+            <strong>Đọc hiểu tiếng Anh (15 bài)</strong>
+            <small>Luyện đọc tương tác từ A1 đến B1+</small>
+          </div>
+        </div>
+        <div class="mobile-sheet-item" data-go="backup">
+          <span class="sheet-item-icon">💾</span>
+          <div class="sheet-item-text">
+            <strong>Dữ liệu & Sao lưu</strong>
+            <small>Đồng bộ Google Drive, xuất/nhập file JSON</small>
+          </div>
+        </div>
+        <div class="mobile-sheet-item" id="sheetVoiceBtn">
+          <span class="sheet-item-icon">🎙️</span>
+          <div class="sheet-item-text">
+            <strong>Cài đặt giọng đọc bản xứ</strong>
+            <small>Tùy chọn giọng chuẩn Mỹ/Anh và tốc độ nói</small>
+          </div>
+        </div>
+        <div class="mobile-sheet-item" id="sheetGuideBtn">
+          <span class="sheet-item-icon">📱</span>
+          <div class="sheet-item-text">
+            <strong>Ghim thành App trên điện thoại</strong>
+            <small>Mở toàn màn hình không có thanh trình duyệt</small>
+          </div>
         </div>
       </div>
     </div>

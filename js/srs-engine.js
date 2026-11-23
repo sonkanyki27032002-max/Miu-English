@@ -19,7 +19,7 @@
         created_at: new Date().toISOString(),
         last_updated: new Date().toISOString(),
         user_profile: {
-          name: "Học viên English Hub",
+          name: "Học viên Miu Student English",
           target_minutes_daily: 45,
           current_day: 1,
           streak_days: 1,
