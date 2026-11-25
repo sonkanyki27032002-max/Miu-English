@@ -2536,7 +2536,7 @@ html, body {
                   <button class="btn btn-xs outline" id="toggleGDriveConfigBtn">Cài đặt API ⚙️</button>
                 </div>
                 <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5;">
-                  Tự động đồng bộ 1 chạm qua Google Drive API riêng tư vào file <code>english_hub_backup.json</code> trên Drive.
+                  Tự động đồng bộ 1 chạm qua Google Drive API riêng tư vào file <code>miu_english_backup.json</code> trên Drive của bạn.
                 </p>
                 <div style="display:flex;gap:8px;">
                   <button class="btn gold btn-sm" id="gdriveUploadApiBtn" style="flex:1;">⬆️ Đẩy lên Drive</button>
@@ -2548,14 +2548,14 @@ html, body {
             <!-- Expandable Google Client ID Config -->
             <div id="gdriveConfigPanel" class="hidden" style="margin-top:16px;background:#fff;padding:14px;border-radius:10px;border:1px dashed #93c5fd;">
               <label style="display:block;font-size:12px;font-weight:750;color:var(--navy);margin-bottom:4px;">
-                Google OAuth Client ID (Dành cho Cách 2 đồng bộ API):
+                Google OAuth Client ID (Đã cấu hình sẵn cho bạn):
               </label>
               <div style="display:flex;gap:8px;">
-                <input type="text" id="gdriveClientIdInput" class="field" style="font-size:12px;" placeholder="Ví dụ: 123456789-abc.apps.googleusercontent.com">
+                <input type="text" id="gdriveClientIdInput" class="field" style="font-size:12px;" value="182926987961-tb5kj3kedram5t13vqlotdalkodlcjbc.apps.googleusercontent.com" placeholder="Ví dụ: 123456789-abc.apps.googleusercontent.com">
                 <button class="btn primary btn-xs" id="saveGDriveClientIdBtn">Lưu Client ID</button>
               </div>
-              <small style="color:var(--muted);display:block;margin-top:6px;font-size:11px;">
-                💡 Bạn chỉ cần tạo OAuth 2.0 Web Client ID miễn phí tại Google Cloud Console (phạm vi: <code>drive.file</code>). Nếu không muốn cài đặt, hãy dùng <b>Cách 1 (Lưu nhanh lên Google Drive)</b> tiện lợi ở trên!
+              <small style="color:var(--muted);display:block;margin-top:6px;font-size:11px;line-height:1.6;">
+                ✅ <b>Đã tích hợp sẵn Client ID</b> từ dự án Google Cloud của bạn! Bạn chỉ cần nhấn nút <b>⬆️ Đẩy lên Drive</b> để đăng nhập tài khoản Google và đồng bộ tự động.
               </small>
             </div>
           </div>

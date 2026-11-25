@@ -115,7 +115,7 @@
           }
         ],
         google_drive_config: {
-          client_id: '',
+          client_id: '182926987961-tb5kj3kedram5t13vqlotdalkodlcjbc.apps.googleusercontent.com',
           last_synced: null,
           file_id: null
         }
@@ -149,7 +149,9 @@
               parsed.my_cards = [];
             }
             if (!parsed.google_drive_config) {
-              parsed.google_drive_config = { client_id: '', last_synced: null, file_id: null };
+              parsed.google_drive_config = { client_id: '182926987961-tb5kj3kedram5t13vqlotdalkodlcjbc.apps.googleusercontent.com', last_synced: null, file_id: null };
+            } else if (!parsed.google_drive_config.client_id) {
+              parsed.google_drive_config.client_id = '182926987961-tb5kj3kedram5t13vqlotdalkodlcjbc.apps.googleusercontent.com';
             }
             this.checkAndUpdateStreak(parsed);
             return parsed;

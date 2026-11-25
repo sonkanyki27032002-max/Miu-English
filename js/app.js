@@ -4043,11 +4043,18 @@
   const GoogleDriveSync = {
     tokenClient: null,
     accessToken: null,
+    pendingAction: null,
+    defaultClientId: '182926987961-tb5kj3kedram5t13vqlotdalkodlcjbc.apps.googleusercontent.com',
+
+    getClientId() {
+      const cfg = App.srs?.state?.google_drive_config || {};
+      return cfg.client_id || this.defaultClientId;
+    },
 
     async quickSaveToDrive() {
       const jsonStr = App.srs.exportBackupJSON();
       const dateStr = new Date().toISOString().split('T')[0];
-      const fileName = `english-hub-backup-${dateStr}.json`;
+      const fileName = `miu_english_backup_${dateStr}.json`;
       const file = new File([jsonStr], fileName, { type: 'application/json' });
 
       // Native Web Share API with File (Mobile Chrome / Safari on iOS & Android)
@@ -4084,44 +4091,62 @@
 
     initGisClient(clientId) {
       if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-        showToast('Thư viện Google API chưa sẵn sàng. Bạn có thể dùng Cách 1 (Lưu nhanh lên Drive) rất tiện lợi.');
+        showToast('Thư viện Google API đang tải hoặc chưa sẵn sàng. Bạn có thể dùng Cách 1 (Lưu nhanh lên Drive)!');
         return false;
       }
       try {
         this.tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: clientId,
           scope: 'https://www.googleapis.com/auth/drive.file',
-          callback: (tokenResponse) => {
+          callback: async (tokenResponse) => {
             if (tokenResponse && tokenResponse.access_token) {
               this.accessToken = tokenResponse.access_token;
-              showToast('Đăng nhập Google Drive thành công!');
+              showToast('Đăng nhập Google thành công! Đang tiến hành đồng bộ...');
               this.updateStatusBadge('Đã kết nối');
+              const act = this.pendingAction;
+              this.pendingAction = null;
+              if (act === 'upload') {
+                await this.uploadToDriveAPI();
+              } else if (act === 'download') {
+                await this.downloadFromDriveAPI();
+              }
+            } else if (tokenResponse && tokenResponse.error) {
+              console.error('Google OAuth error:', tokenResponse);
+              this.pendingAction = null;
+              if (tokenResponse.error === 'access_denied') {
+                showToast('Chưa cấp quyền hoặc tài khoản chưa được thêm vào Test users trong Google Cloud!');
+              } else {
+                showToast('Lỗi đăng nhập Google: ' + (tokenResponse.error_description || tokenResponse.error));
+              }
             }
           }
         });
         return true;
       } catch (e) {
         console.error('GIS init error:', e);
+        showToast('Không thể khởi tạo Google API: ' + e.message);
         return false;
       }
     },
 
     async uploadToDriveAPI() {
       const cfg = App.srs.state.google_drive_config || {};
-      const clientId = cfg.client_id;
+      const clientId = this.getClientId();
       if (!clientId) {
-        showToast('Vui lòng nhập Google Client ID trong phần Cài đặt API trước.');
+        showToast('Vui lòng cấu hình Google Client ID trong phần Cài đặt API trước.');
         $('gdriveConfigPanel')?.classList.remove('hidden');
         return;
       }
 
       if (!this.accessToken) {
-        this.initGisClient(clientId);
-        if (this.tokenClient) {
-          this.tokenClient.requestAccessToken({ prompt: 'consent' });
+        this.pendingAction = 'upload';
+        const ready = this.initGisClient(clientId);
+        if (ready && this.tokenClient) {
+          this.tokenClient.requestAccessToken({ prompt: '' });
           showToast('Vui lòng chọn tài khoản Google để cấp quyền lưu file sao lưu.');
           return;
         }
+        return;
       }
 
       showToast('Đang tải dữ liệu lên Google Drive...');
@@ -4153,6 +4178,7 @@
 
         if (!res.ok && res.status === 404 && cfg.file_id) {
           // Fallback create new file if previous file was deleted
+          cfg.file_id = null;
           res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
             method: 'POST',
             headers: {
@@ -4167,7 +4193,15 @@
             this.accessToken = null;
             throw new Error('Phiên đăng nhập hết hạn. Vui lòng bấm lại để đăng nhập.');
           }
-          throw new Error(`Google API lỗi (${res.status})`);
+          let errDetail = '';
+          try {
+            const errJson = await res.json();
+            errDetail = errJson?.error?.message || '';
+          } catch (_) {}
+          if (errDetail.toLowerCase().includes('drive api') || errDetail.toLowerCase().includes('not been used')) {
+            throw new Error('Google Drive API chưa được Bật trong Google Cloud Console! Hãy vào Google Cloud Console -> Thư viện API -> Tìm Google Drive API và nhấn Bật.');
+          }
+          throw new Error(`Google API lỗi (${res.status}): ${errDetail || res.statusText}`);
         }
 
         const data = await res.json();
@@ -4184,20 +4218,22 @@
 
     async downloadFromDriveAPI() {
       const cfg = App.srs.state.google_drive_config || {};
-      const clientId = cfg.client_id;
+      const clientId = this.getClientId();
       if (!clientId) {
-        showToast('Vui lòng nhập Google Client ID trước.');
+        showToast('Vui lòng cấu hình Google Client ID trước.');
         $('gdriveConfigPanel')?.classList.remove('hidden');
         return;
       }
 
       if (!this.accessToken) {
-        this.initGisClient(clientId);
-        if (this.tokenClient) {
-          this.tokenClient.requestAccessToken({ prompt: 'consent' });
+        this.pendingAction = 'download';
+        const ready = this.initGisClient(clientId);
+        if (ready && this.tokenClient) {
+          this.tokenClient.requestAccessToken({ prompt: '' });
           showToast('Vui lòng chọn tài khoản Google để tải file.');
           return;
         }
+        return;
       }
 
       showToast('Đang tìm bản sao lưu trên Google Drive...');
@@ -4206,6 +4242,23 @@
         const listRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime desc`, {
           headers: { Authorization: `Bearer ${this.accessToken}` }
         });
+
+        if (!listRes.ok) {
+          if (listRes.status === 401) {
+            this.accessToken = null;
+            throw new Error('Phiên đăng nhập hết hạn. Vui lòng bấm lại để đăng nhập.');
+          }
+          let errDetail = '';
+          try {
+            const errJson = await listRes.json();
+            errDetail = errJson?.error?.message || '';
+          } catch (_) {}
+          if (errDetail.toLowerCase().includes('drive api') || errDetail.toLowerCase().includes('not been used')) {
+            throw new Error('Google Drive API chưa được Bật trong Google Cloud Console! Hãy vào Google Cloud Console -> Thư viện API -> Tìm Google Drive API và nhấn Bật.');
+          }
+          throw new Error(`Google API lỗi (${listRes.status}): ${errDetail || listRes.statusText}`);
+        }
+
         const listData = await listRes.json();
         if (!listData.files || listData.files.length === 0) {
           throw new Error('Không tìm thấy tệp sao lưu (miu_english_backup.json) trên Google Drive của bạn.');
@@ -4215,6 +4268,9 @@
         const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
           headers: { Authorization: `Bearer ${this.accessToken}` }
         });
+        if (!fileRes.ok) {
+          throw new Error('Không thể tải tệp sao lưu từ Google Drive.');
+        }
         const jsonStr = await fileRes.text();
         const importResult = App.srs.importBackupJSON(jsonStr);
 
@@ -4258,8 +4314,8 @@
       `;
     }
 
-    if (cfg.client_id && $('gdriveClientIdInput')) {
-      $('gdriveClientIdInput').value = cfg.client_id;
+    if ($('gdriveClientIdInput')) {
+      $('gdriveClientIdInput').value = cfg.client_id || GoogleDriveSync.defaultClientId;
     }
     if (cfg.last_synced && $('gdriveStatusText')) {
       $('gdriveStatusText').textContent = 'Đồng bộ lúc ' + new Date(cfg.last_synced).toLocaleTimeString('vi-VN');
