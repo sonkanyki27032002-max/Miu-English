@@ -4128,7 +4128,7 @@
       try {
         const jsonContent = App.srs.exportBackupJSON();
         const metadata = {
-          name: 'english_hub_backup.json',
+          name: 'miu_english_backup.json',
           mimeType: 'application/json'
         };
 
@@ -4136,13 +4136,31 @@
         form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
         form.append('file', new Blob([jsonContent], { type: 'application/json' }));
 
-        const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-          method: 'POST',
+        let uploadUrl = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+        let method = 'POST';
+        if (cfg.file_id) {
+          uploadUrl = `https://www.googleapis.com/upload/drive/v3/files/${cfg.file_id}?uploadType=multipart`;
+          method = 'PATCH';
+        }
+
+        let res = await fetch(uploadUrl, {
+          method,
           headers: {
             Authorization: `Bearer ${this.accessToken}`
           },
           body: form
         });
+
+        if (!res.ok && res.status === 404 && cfg.file_id) {
+          // Fallback create new file if previous file was deleted
+          res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${this.accessToken}`
+            },
+            body: form
+          });
+        }
 
         if (!res.ok) {
           if (res.status === 401) {
@@ -4156,7 +4174,7 @@
         cfg.last_synced = new Date().toISOString();
         cfg.file_id = data.id;
         App.srs.saveState();
-        showToast('🎉 Đã tải bản sao lưu lên Google Drive thành công!');
+        showToast('🎉 Đã đồng bộ lên Google Drive thành công!');
         this.updateStatusBadge('Đồng bộ lúc ' + new Date().toLocaleTimeString('vi-VN'));
         renderBackupView();
       } catch (err) {
@@ -4184,13 +4202,13 @@
 
       showToast('Đang tìm bản sao lưu trên Google Drive...');
       try {
-        const q = encodeURIComponent("name = 'english_hub_backup.json' and trashed = false");
+        const q = encodeURIComponent("(name = 'miu_english_backup.json' or name = 'english_hub_backup.json') and trashed = false");
         const listRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime desc`, {
           headers: { Authorization: `Bearer ${this.accessToken}` }
         });
         const listData = await listRes.json();
         if (!listData.files || listData.files.length === 0) {
-          throw new Error('Không tìm thấy tệp english_hub_backup.json trên Drive của bạn.');
+          throw new Error('Không tìm thấy tệp sao lưu (miu_english_backup.json) trên Google Drive của bạn.');
         }
 
         const fileId = listData.files[0].id;
